@@ -28,4 +28,6 @@ interface AttendanceRepository {
         requestedCheckOutAt: String?,
         reason: String
     ): Result<CreateCorrectionResponse>
+
+    suspend fun getAttendanceHistory(cashierId: Long): Result<List<com.skyprivilege.domain.model.AttendanceHistoryItem>>
 }

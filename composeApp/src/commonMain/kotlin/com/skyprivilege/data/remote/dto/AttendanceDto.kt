@@ -79,3 +79,11 @@ data class CreateCorrectionResponse(
     @SerialName("correction_request") val correctionRequest: CorrectionRequestDto? = null,
     val error: String? = null
 )
+
+@Serializable
+data class AttendanceListResponse(
+    val success: Boolean,
+    val attendances: List<com.skyprivilege.domain.model.AttendanceHistoryItem> = emptyList(),
+    val error: String? = null
+)
+

@@ -113,4 +113,57 @@ class RedemptionRepositoryTest {
         assertIs<NonStackingConflictException>(exception)
         assertEquals("Order ini sudah menggunakan diskon SkyPrivilege", exception.errorMessage)
     }
+
+    @Test
+    fun testGetRedemptionsSuccess() = runTest {
+        val mockEngine = MockEngine { request ->
+            assertEquals("/api/v1/redemptions", request.url.encodedPath)
+            assertEquals("2", request.url.parameters["cashier_id"])
+            respond(
+                content = """
+                    {
+                        "success": true,
+                        "redemptions": [
+                            {
+                                "id": 101,
+                                "pnr_canonical_hash": "f7f12381abcde",
+                                "pnr_masked": "f7f12381...",
+                                "flight_number": "GA410",
+                                "outlet_name": "Sky Lounge Terminal 3 CGK",
+                                "cashier_name": "Kasir Terminal 3",
+                                "discount_amount": 25000.0,
+                                "status": "approved",
+                                "is_overridden": false,
+                                "created_at": "2026-09-19T15:43:00Z",
+                                "date_formatted": "19 Sep 2026",
+                                "time_formatted": "15:43 WIB"
+                            }
+                        ]
+                    }
+                """.trimIndent(),
+                status = HttpStatusCode.OK,
+                headers = headersOf(HttpHeaders.ContentType, "application/json")
+            )
+        }
+
+        val client = HttpClient(mockEngine) {
+            install(ContentNegotiation) {
+                json(Json { ignoreUnknownKeys = true })
+            }
+        }
+
+        val repository = RedemptionRepositoryImpl(client)
+        val result = repository.getRedemptions(cashierId = 2L)
+
+        assertTrue(result.isSuccess)
+        val list = result.getOrNull()
+        kotlin.test.assertNotNull(list)
+        assertEquals(1, list.size)
+        val item = list.first()
+        assertEquals(101L, item.id)
+        assertEquals("f7f12381...", item.pnrMasked)
+        assertEquals("GA410", item.flightNumber)
+        assertEquals(25000.0, item.discountAmount)
+        assertEquals("15:43 WIB", item.timeFormatted)
+    }
 }
