@@ -56,7 +56,7 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun MainAppScreen(
-    initialBaseUrl: String = "http://10.0.2.2:3000"
+    initialBaseUrl: String = "http://10.0.2.2:3001"
 ) {
     var baseUrl by remember { mutableStateOf(initialBaseUrl) }
     val outletId = 1L
