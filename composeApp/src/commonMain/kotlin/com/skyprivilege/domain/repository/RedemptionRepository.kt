@@ -3,6 +3,10 @@ package com.skyprivilege.domain.repository
 import com.skyprivilege.domain.model.LocationContext
 import com.skyprivilege.domain.model.RedemptionClaim
 
+class NonStackingConflictException(
+    val errorMessage: String = "Order ini sudah menggunakan diskon SkyPrivilege"
+) : Exception(errorMessage)
+
 interface RedemptionRepository {
     suspend fun requestClaimToken(
         orderId: String,
