@@ -39,6 +39,13 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.skyprivilege.domain.model.TicketGuideline
 
+object AuthenticityChecklistValidator {
+    fun isAllChecked(guidelines: List<TicketGuideline>, checkedMap: Map<Long, Boolean>): Boolean {
+        if (guidelines.isEmpty()) return false
+        return guidelines.all { checkedMap[it.id] == true }
+    }
+}
+
 @Composable
 fun AuthenticityChecklistDialog(
     guidelines: List<TicketGuideline>,
@@ -50,9 +57,10 @@ fun AuthenticityChecklistDialog(
 ) {
     val checkedMap = remember(guidelines) {
         mutableStateMapOf<Long, Boolean>().apply {
-            guidelines.forEach { put(it.id, true) }
+            guidelines.forEach { put(it.id, false) }
         }
     }
+    val isAllChecked = AuthenticityChecklistValidator.isAllChecked(guidelines, checkedMap)
 
     Dialog(onDismissRequest = { if (!isSubmitting) onDismiss() }) {
         Surface(
@@ -141,7 +149,7 @@ fun AuthenticityChecklistDialog(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         items(guidelines, key = { it.id }) { guideline ->
-                            val isChecked = checkedMap[guideline.id] ?: true
+                            val isChecked = checkedMap[guideline.id] ?: false
 
                             Card(
                                 shape = RoundedCornerShape(12.dp),
@@ -210,7 +218,7 @@ fun AuthenticityChecklistDialog(
 
                     Button(
                         onClick = onConfirm,
-                        enabled = !isLoading && !isSubmitting,
+                        enabled = !isLoading && !isSubmitting && isAllChecked,
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color(0xFF1B5E20)
                         ),
