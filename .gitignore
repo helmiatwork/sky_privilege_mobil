@@ -6,3 +6,4 @@ composeApp/build/
 local.properties
 .DS_Store
 *.hprof
+screenshots/

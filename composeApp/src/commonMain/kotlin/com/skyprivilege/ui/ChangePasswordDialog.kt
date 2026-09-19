@@ -24,6 +24,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -32,6 +33,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.skyprivilege.ui.components.FlatLockShiftIcon
 
 @Composable
 fun ChangePasswordDialog(
@@ -53,12 +55,16 @@ fun ChangePasswordDialog(
             modifier = Modifier.fillMaxWidth().padding(8.dp)
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
-                Text(
-                    text = "🔒 Ganti Password / PIN",
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF0F172A)
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    FlatLockShiftIcon(isLocked = true, tint = Color(0xFF005BAC), size = 20.dp)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Ganti Password / PIN",
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF0F172A)
+                    )
+                }
                 Text(
                     text = "Perbarui PIN keamanan kasir untuk autentikasi shift & login",
                     fontSize = 12.sp,

@@ -33,6 +33,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.skyprivilege.data.remote.dto.CashierProfileDto
+import com.skyprivilege.ui.components.FlatEditIcon
+import com.skyprivilege.ui.components.FlatLockShiftIcon
+import com.skyprivilege.ui.components.FlatLogoutIcon
 
 @Composable
 fun AkunSayaTabContent(
@@ -205,20 +208,20 @@ fun AkunSayaTabContent(
 
                     // Action: Edit Profile Name
                     AccountActionRow(
-                        icon = "✏️",
                         title = "Ubah Nama Profil",
                         subtitle = "Perbarui nama kasir yang aktif",
-                        onClick = onOpenEditProfile
+                        onClick = onOpenEditProfile,
+                        icon = { FlatEditIcon(tint = Color(0xFF005BAC), size = 20.dp) }
                     )
 
                     Spacer(modifier = Modifier.height(8.dp))
 
                     // Action: Change Password / PIN
                     AccountActionRow(
-                        icon = "🔒",
                         title = "Ganti Password / PIN",
                         subtitle = "Ubah PIN keamanan autentikasi kasir",
-                        onClick = onOpenChangePassword
+                        onClick = onOpenChangePassword,
+                        icon = { FlatLockShiftIcon(isLocked = true, tint = Color(0xFF005BAC), size = 20.dp) }
                     )
                 }
             }
@@ -291,7 +294,14 @@ fun AkunSayaTabContent(
                 ),
                 border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFECDD3))
             ) {
-                Text("🚪 Keluar / Logout", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    FlatLogoutIcon(tint = Color(0xFFE11D48), size = 18.dp)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Keluar / Logout", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                }
             }
             Spacer(modifier = Modifier.height(20.dp))
         }
@@ -300,10 +310,10 @@ fun AkunSayaTabContent(
 
 @Composable
 fun AccountActionRow(
-    icon: String,
     title: String,
     subtitle: String,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    icon: @Composable () -> Unit
 ) {
     Card(
         shape = RoundedCornerShape(12.dp),
@@ -323,7 +333,7 @@ fun AccountActionRow(
                     .background(Color(0xFFE0F2FE)),
                 contentAlignment = Alignment.Center
             ) {
-                Text(icon, fontSize = 20.sp)
+                icon()
             }
 
             Spacer(modifier = Modifier.width(14.dp))
