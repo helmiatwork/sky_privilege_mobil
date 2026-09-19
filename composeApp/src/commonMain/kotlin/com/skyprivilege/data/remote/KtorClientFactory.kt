@@ -29,6 +29,7 @@ object KtorClientFactory {
                 url(baseUrl)
                 contentType(ContentType.Application.Json)
                 header("X-Device-Id", deviceId)
+                header("X-Device-Token", deviceId)
                 header("X-Outlet-Id", outletId.toString())
                 authTokenProvider?.invoke()?.let { token ->
                     header("Authorization", "Bearer $token")
