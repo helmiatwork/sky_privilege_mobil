@@ -13,7 +13,7 @@ object KtorClientFactory {
     fun createHttpClient(
         baseUrl: String = "http://10.0.2.2:3001",
         deviceId: String = "DEV-TABLET-001",
-        outletId: Long = 1L,
+        outletId: Long = 2L,
         authTokenProvider: (() -> String?)? = null
     ): HttpClient {
         return HttpClient {
