@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -48,6 +49,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import com.skyprivilege.data.remote.KtorClientFactory
 import com.skyprivilege.data.remote.dto.AttendanceRecordDto
 import com.skyprivilege.data.remote.dto.AuthenticityAcknowledgmentDto
@@ -63,13 +65,16 @@ import com.skyprivilege.domain.model.RedemptionClaim
 import com.skyprivilege.domain.model.RedemptionHistoryItem
 import com.skyprivilege.domain.model.Ticket
 import com.skyprivilege.domain.model.TicketGuideline
+import com.skyprivilege.data.remote.dto.CashierProfileDto
+import com.skyprivilege.data.repository.ProfileRepositoryImpl
 import kotlinx.coroutines.launch
 
 enum class AppTab(val title: String, val iconText: String) {
     HOME("Home", "🏠"),
-    HISTORY("History", "📜"),
+    HISTORY("Transaksi", "💳"),
     SCAN("Scan", "📷"),
-    ABSEN("Absen", "⏱️")
+    ABSEN("Absen", "⏱️"),
+    AKUN_SAYA("Akun Saya", "👤")
 }
 
 data class LocalCorrectionItem(
@@ -112,11 +117,36 @@ fun MainAppScreen(
     val ticketRepo = remember(httpClient) { TicketRepositoryImpl(httpClient) }
     val redemptionRepo = remember(httpClient) { RedemptionRepositoryImpl(httpClient) }
     val attendanceRepo = remember(httpClient) { AttendanceRepositoryImpl(httpClient) }
+    val profileRepo = remember(httpClient) { ProfileRepositoryImpl(httpClient) }
 
     val coroutineScope = rememberCoroutineScope()
 
     // Navigation state
     var currentTab by remember { mutableStateOf(AppTab.HOME) }
+
+    // Cashier Profile state
+    var cashierProfile by remember {
+        mutableStateOf(
+            CashierProfileDto(
+                id = cashierId,
+                name = "ANDHIKA PUTRA",
+                employeeId = "CSH-001",
+                role = "cashier",
+                outletId = outletId,
+                outletName = "Sky Lounge Terminal 3 CGK",
+                active = true
+            )
+        )
+    }
+    var isProfileLoading by remember { mutableStateOf(false) }
+    var showEditProfileDialog by remember { mutableStateOf(false) }
+    var isEditingProfile by remember { mutableStateOf(false) }
+    var editProfileError by remember { mutableStateOf<String?>(null) }
+    var showChangePasswordDialog by remember { mutableStateOf(false) }
+    var isChangingPassword by remember { mutableStateOf(false) }
+    var changePasswordError by remember { mutableStateOf<String?>(null) }
+    var showSopDialog by remember { mutableStateOf(false) }
+    var showLogoutDialog by remember { mutableStateOf(false) }
 
     // Shift state
     var activeShiftId by remember { mutableStateOf<Long?>(null) }
@@ -201,6 +231,18 @@ fun MainAppScreen(
         }
     }
 
+    fun refreshProfile() {
+        isProfileLoading = true
+        coroutineScope.launch {
+            profileRepo.getProfile(cashierId).onSuccess { prof ->
+                cashierProfile = prof
+                isProfileLoading = false
+            }.onFailure {
+                isProfileLoading = false
+            }
+        }
+    }
+
     // Initial Load
     LaunchedEffect(httpClient) {
         shiftRepo.getCurrentShift(cashierId, outletId).onSuccess { res ->
@@ -218,54 +260,76 @@ fun MainAppScreen(
         }
         refreshRedemptions()
         refreshAttendances()
+        refreshProfile()
     }
 
     Scaffold(
-        bottomBar = {
-            NavigationBar(
-                containerColor = Color.White,
-                tonalElevation = 8.dp
+        topBar = {
+            Surface(
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                color = Color.White,
+                shadowElevation = 3.dp
             ) {
-                AppTab.values().forEach { tab ->
-                    val selected = currentTab == tab
-                    NavigationBarItem(
-                        selected = selected,
-                        onClick = {
-                            currentTab = tab
-                            if (tab == AppTab.HISTORY) refreshRedemptions()
-                            if (tab == AppTab.ABSEN) refreshAttendances()
-                        },
-                        icon = {
-                            Text(
-                                text = tab.iconText,
-                                fontSize = if (selected) 20.sp else 18.sp
-                            )
-                        },
-                        label = {
-                            Text(
-                                text = tab.title,
-                                fontSize = 11.sp,
-                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
-                                color = if (selected) GrabGreen else SlateSubtle
-                            )
-                        },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = GrabGreen,
-                            selectedTextColor = GrabGreen,
-                            indicatorColor = GrabGreenLight,
-                            unselectedIconColor = SlateSubtle,
-                            unselectedTextColor = SlateSubtle
+                Row(
+                    modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "SkyPrivilege",
+                            fontSize = 19.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF005BAC)
                         )
-                    )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "mobile",
+                            fontSize = 17.sp,
+                            fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+                            color = Color(0xFF0284C7)
+                        )
+                    }
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(10.dp)
+                                .clip(RoundedCornerShape(2.dp))
+                                .background(Color(0xFF22C55E))
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Box(
+                            modifier = Modifier
+                                .clickable { showLogoutDialog = true }
+                                .padding(4.dp)
+                        ) {
+                            Text(
+                                text = "🚪",
+                                fontSize = 18.sp
+                            )
+                        }
+                    }
                 }
             }
+        },
+        bottomBar = {
+            BcaBottomNavigationBar(
+                currentTab = currentTab,
+                onTabSelected = { tab ->
+                    currentTab = tab
+                    if (tab == AppTab.HISTORY) refreshRedemptions()
+                    if (tab == AppTab.ABSEN) refreshAttendances()
+                    if (tab == AppTab.AKUN_SAYA) refreshProfile()
+                }
+            )
         }
     ) { paddingValues ->
         Surface(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues),
-            color = BgLight
+            color = if (currentTab == AppTab.HOME) Color(0xFF072146) else BgLight
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
                 // Global Error Banner
@@ -326,6 +390,7 @@ fun MainAppScreen(
                 when (currentTab) {
                     AppTab.HOME -> {
                         HomeTabContent(
+                            cashierName = cashierProfile.name,
                             activeShiftId = activeShiftId,
                             shiftStatusText = shiftStatusText,
                             todayAttendance = todayAttendance,
@@ -394,6 +459,9 @@ fun MainAppScreen(
                             },
                             onOpenEmergencyVoucher = {
                                 showEmergencyDialog = true
+                            },
+                            onOpenSop = {
+                                showSopDialog = true
                             }
                         )
                     }
@@ -541,6 +609,26 @@ fun MainAppScreen(
                             }
                         )
                     }
+
+                    AppTab.AKUN_SAYA -> {
+                        AkunSayaTabContent(
+                            profile = cashierProfile,
+                            isLoading = isProfileLoading,
+                            deviceId = deviceId,
+                            onRefresh = { refreshProfile() },
+                            onOpenEditProfile = {
+                                editProfileError = null
+                                showEditProfileDialog = true
+                            },
+                            onOpenChangePassword = {
+                                changePasswordError = null
+                                showChangePasswordDialog = true
+                            },
+                            onLogout = {
+                                showLogoutDialog = true
+                            }
+                        )
+                    }
                 }
             }
 
@@ -680,15 +768,78 @@ fun MainAppScreen(
                     }
                 )
             }
+
+            if (showEditProfileDialog) {
+                EditProfileDialog(
+                    currentName = cashierProfile.name,
+                    isSubmitting = isEditingProfile,
+                    errorMessage = editProfileError,
+                    onDismiss = { showEditProfileDialog = false },
+                    onSubmit = { newName ->
+                        isEditingProfile = true
+                        editProfileError = null
+                        coroutineScope.launch {
+                            profileRepo.updateProfile(cashierId, newName).onSuccess { msg ->
+                                isEditingProfile = false
+                                showEditProfileDialog = false
+                                attendanceSuccessToast = msg
+                                cashierProfile = cashierProfile.copy(name = newName)
+                            }.onFailure { err ->
+                                isEditingProfile = false
+                                editProfileError = err.message ?: "Gagal memperbarui profil"
+                            }
+                        }
+                    }
+                )
+            }
+
+            if (showChangePasswordDialog) {
+                ChangePasswordDialog(
+                    isSubmitting = isChangingPassword,
+                    errorMessage = changePasswordError,
+                    onDismiss = { showChangePasswordDialog = false },
+                    onSubmit = { oldPin, newPin, confirmation ->
+                        isChangingPassword = true
+                        changePasswordError = null
+                        coroutineScope.launch {
+                            profileRepo.changePassword(cashierId, oldPin, newPin, confirmation).onSuccess { msg ->
+                                isChangingPassword = false
+                                showChangePasswordDialog = false
+                                attendanceSuccessToast = msg
+                            }.onFailure { err ->
+                                isChangingPassword = false
+                                changePasswordError = err.message ?: "Gagal mengubah password/PIN"
+                            }
+                        }
+                    }
+                )
+            }
+
+            if (showSopDialog) {
+                SopGuidelineDialog(
+                    onDismiss = { showSopDialog = false }
+                )
+            }
+
+            if (showLogoutDialog) {
+                LogoutConfirmDialog(
+                    onDismiss = { showLogoutDialog = false },
+                    onConfirm = {
+                        showLogoutDialog = false
+                        attendanceSuccessToast = "Sesi kasir berhasil diakhiri"
+                    }
+                )
+            }
         }
     }
 }
 
 // ==========================================
-// 1. HOME TAB CONTENT (Grab Style)
+// 1. HOME TAB CONTENT (BCA Mobile Style)
 // ==========================================
 @Composable
 fun HomeTabContent(
+    cashierName: String,
     activeShiftId: Long?,
     shiftStatusText: String,
     todayAttendance: AttendanceRecordDto?,
@@ -699,210 +850,171 @@ fun HomeTabContent(
     onOpenCorrection: () -> Unit,
     onOpenChecklist: () -> Unit,
     onToggleShift: () -> Unit,
-    onOpenEmergencyVoucher: () -> Unit
+    onOpenEmergencyVoucher: () -> Unit,
+    onOpenSop: () -> Unit
 ) {
     LazyColumn(
-        modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFF072146))
+            .padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        item { Spacer(modifier = Modifier.height(4.dp)) }
+        item { Spacer(modifier = Modifier.height(8.dp)) }
 
-        // Top Header Card (Grab Slate & Emerald)
+        // BCA Greeting Section
+        item {
+            Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)) {
+                Text(
+                    text = "Selamat datang,",
+                    color = Color(0xFF93C5FD),
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Normal
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = cashierName.uppercase(),
+                    color = Color.White,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.5.sp
+                )
+            }
+        }
+
+        // BCA 8 Services Grid (2 rows x 4 columns)
         item {
             Card(
-                shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(containerColor = SlateDark),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF0A2E5C).copy(alpha = 0.6f)),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF1E4E8C)),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Column(modifier = Modifier.padding(18.dp)) {
+                Column(modifier = Modifier.padding(10.dp)) {
+                    // Row 1
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        BcaGridItem(
+                            modifier = Modifier.weight(1f),
+                            iconText = "📷",
+                            label = "Scan Tiket",
+                            onClick = onNavigateToScan
+                        )
+                        BcaGridItem(
+                            modifier = Modifier.weight(1f),
+                            iconText = "📍",
+                            label = "Absensi GPS",
+                            onClick = onOpenAttendance
+                        )
+                        BcaGridItem(
+                            modifier = Modifier.weight(1f),
+                            iconText = "📝",
+                            label = "Koreksi Absen",
+                            onClick = onOpenCorrection
+                        )
+                        BcaGridItem(
+                            modifier = Modifier.weight(1f),
+                            iconText = if (activeShiftId != null) "🔒" else "🔓",
+                            label = if (activeShiftId != null) "Tutup Shift" else "Buka Shift",
+                            onClick = onToggleShift
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Row 2
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        BcaGridItem(
+                            modifier = Modifier.weight(1f),
+                            iconText = "📋",
+                            label = "Checklist Fisik",
+                            onClick = onOpenChecklist
+                        )
+                        BcaGridItem(
+                            modifier = Modifier.weight(1f),
+                            iconText = "🎟️",
+                            label = "Voucher Darurat",
+                            onClick = onOpenEmergencyVoucher
+                        )
+                        BcaGridItem(
+                            modifier = Modifier.weight(1f),
+                            iconText = "📜",
+                            label = "Riwayat Scan",
+                            onClick = onNavigateToHistory
+                        )
+                        BcaGridItem(
+                            modifier = Modifier.weight(1f),
+                            iconText = "📖",
+                            label = "Panduan SOP",
+                            onClick = onOpenSop
+                        )
+                    }
+                }
+            }
+        }
+
+        // Quick Status & Shift Card (BCA Style Clean White Card)
+        item {
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier
-                                    .size(42.dp)
-                                    .clip(CircleShape)
-                                    .background(Color(0xFFFFF7ED))
-                                    .border(1.5.dp, Color(0xFFEA580C), CircleShape),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text("KT", color = Color(0xFFEA580C), fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                            }
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Column {
-                                Text("Kasir Terminal 3", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                                Text("Sky Lounge Terminal 3 CGK", color = Color(0xFF94A3B8), fontSize = 11.sp)
-                            }
+                        Column {
+                            Text("Status Operasional Kasir", fontSize = 11.sp, color = Color(0xFF64748B), fontWeight = FontWeight.Medium)
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = if (activeShiftId != null) "Shift #$activeShiftId Aktif" else "Shift Belum Dibuka",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp,
+                                color = if (activeShiftId != null) Color(0xFF005BAC) else Color(0xFFE11D48)
+                            )
                         }
 
-                        // Shift Badge
+                        val (statusText, statusBg, statusCol) = when (todayAttendance?.status) {
+                            "completed" -> Triple("SELESAI", Color(0xFFDCFCE7), Color(0xFF15803D))
+                            "present" -> Triple("HADIR", Color(0xFFDBEAFE), Color(0xFF1D4ED8))
+                            "late" -> Triple("TERLAMBAT", Color(0xFFFEF3C7), Color(0xFFB45309))
+                            else -> Triple("BELUM ABSEN", Color(0xFFF1F5F9), Color(0xFF64748B))
+                        }
                         Box(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(if (activeShiftId != null) GrabGreen else Color(0xFFE11D48))
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(statusBg)
                                 .padding(horizontal = 8.dp, vertical = 4.dp)
                         ) {
-                            Text(
-                                text = if (activeShiftId != null) "OPEN SHIFT" else "OFFLINE SHIFT",
-                                color = Color.White,
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold
-                            )
+                            Text(statusText, color = statusCol, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(14.dp))
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(SlateCard)
-                            .padding(horizontal = 12.dp, vertical = 8.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "Status Kasir:",
-                                color = Color(0xFF94A3B8),
-                                fontSize = 11.sp
-                            )
-                            Text(
-                                text = if (activeShiftId != null) "Shift #$activeShiftId Siap Transaksi" else "Shift Belum Dibuka",
-                                color = if (activeShiftId != null) Color(0xFF34D399) else Color(0xFFF87171),
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        }
-                    }
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Text(
+                        text = todayAttendance?.checkInAt?.let { "Jam Masuk Hari Ini: ${if (it.length >= 16) it.substring(11, 16) else it} WIB" } ?: "Silakan lakukan Absensi GPS saat memulai shift kerja.",
+                        fontSize = 11.sp,
+                        color = Color(0xFF475569)
+                    )
                 }
             }
         }
 
-        // Quick Status Card
-        item {
-            Card(
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(14.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text("Ringkasan Kasir Hari Ini", fontSize = 11.sp, color = SlateSubtle)
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = todayAttendance?.checkInAt?.let { "Jam Masuk: ${if (it.length >= 16) it.substring(11, 16) else it} WIB" } ?: "Belum Check-In Hari Ini",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 13.sp,
-                            color = SlateDark
-                        )
-                    }
-
-                    val (statusText, statusBg, statusCol) = when (todayAttendance?.status) {
-                        "completed" -> Triple("SELESAI", Color(0xFFDCFCE7), Color(0xFF15803D))
-                        "present" -> Triple("HADIR", Color(0xFFDBEAFE), Color(0xFF1D4ED8))
-                        "late" -> Triple("TERLAMBAT", Color(0xFFFEF3C7), Color(0xFFB45309))
-                        else -> Triple("BELUM ABSEN", Color(0xFFF1F5F9), Color(0xFF64748B))
-                    }
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(statusBg)
-                            .padding(horizontal = 8.dp, vertical = 4.dp)
-                    ) {
-                        Text(statusText, color = statusCol, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                    }
-                }
-            }
-        }
-
-        // Quick Service Menu Grid (Grab Style 6-Icon Grid)
-        item {
-            Text(
-                text = "Layanan & Operasional",
-                fontWeight = FontWeight.Bold,
-                fontSize = 14.sp,
-                color = SlateDark
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Card(
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    // Row 1
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceAround
-                    ) {
-                        QuickMenuItem(
-                            iconText = "📷",
-                            iconBg = GrabGreenLight,
-                            label = "Scan Tiket",
-                            onClick = onNavigateToScan
-                        )
-                        QuickMenuItem(
-                            iconText = "📍",
-                            iconBg = Color(0xFFFFEDD5),
-                            label = "Absensi GPS",
-                            onClick = onOpenAttendance
-                        )
-                        QuickMenuItem(
-                            iconText = "✏️",
-                            iconBg = Color(0xFFDBEAFE),
-                            label = "Ajukan Koreksi",
-                            onClick = onOpenCorrection
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Row 2
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceAround
-                    ) {
-                        QuickMenuItem(
-                            iconText = "📋",
-                            iconBg = Color(0xFFFEF3C7),
-                            label = "Checklist Fisik",
-                            onClick = onOpenChecklist
-                        )
-                        QuickMenuItem(
-                            iconText = if (activeShiftId != null) "🔒" else "🔓",
-                            iconBg = Color(0xFFCCFBF1),
-                            label = if (activeShiftId != null) "Tutup Shift" else "Buka Shift",
-                            onClick = onToggleShift
-                        )
-                        QuickMenuItem(
-                            iconText = "🎟️",
-                            iconBg = Color(0xFFF3E8FF),
-                            label = "Emergency",
-                            onClick = onOpenEmergencyVoucher
-                        )
-                    }
-                }
-            }
-        }
-
-        // Promo Banner Card (Grab Style)
+        // Promo Banner Card (BCA Blue Elegant Style)
         item {
             Card(
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = GrabGreen),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF005BAC)),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
@@ -910,50 +1022,49 @@ fun HomeTabContent(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(4.dp))
-                                    .background(Color.White.copy(alpha = 0.25f))
-                                    .padding(horizontal = 6.dp, vertical = 2.dp)
-                            ) {
-                                Text("PROMO AKTIF", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                            }
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(Color.White.copy(alpha = 0.2f))
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            Text("PROMO SKYPRIVILEGE", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold)
                         }
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
-                            text = "Diskon SkyPrivilege Rp 25.000",
+                            text = "Diskon Rp 25.000 / Tiket",
                             color = Color.White,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 15.sp
+                            fontSize = 14.sp
                         )
+                        Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = "Potongan langsung per boarding pass Garuda, Citilink & Lion Group di Sky Lounge T3.",
-                            color = Color.White.copy(alpha = 0.9f),
+                            text = "Garuda, Citilink & Lion Group di Sky Lounge T3 CGK",
+                            color = Color.White.copy(alpha = 0.85f),
                             fontSize = 11.sp
                         )
                     }
-                    Text("✈️", fontSize = 32.sp)
+                    Text("✈️", fontSize = 30.sp)
                 }
             }
         }
 
-        // Recent Activity Snippet
+        // Recent Scans
         item {
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = "Aktivitas Terakhir",
                     fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp,
-                    color = SlateDark
+                    fontSize = 13.sp,
+                    color = Color.White
                 )
                 Text(
-                    text = "Lihat Semua >",
-                    color = GrabGreen,
+                    text = "Lihat Semua ›",
+                    color = Color(0xFF93C5FD),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.clickable { onNavigateToHistory() }
@@ -964,23 +1075,16 @@ fun HomeTabContent(
             if (recentRedemptions.isEmpty()) {
                 Card(
                     shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF0D3268).copy(alpha = 0.5f)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
-                        modifier = Modifier.fillMaxWidth().padding(20.dp),
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text("🎟️", fontSize = 28.sp)
+                        Text("🎟️", fontSize = 24.sp)
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text("Belum ada pemindaian tiket hari ini", fontSize = 12.sp, color = SlateSubtle)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        OutlinedButton(
-                            onClick = onNavigateToScan,
-                            modifier = Modifier.height(32.dp)
-                        ) {
-                            Text("Mulai Scan Tiket", fontSize = 11.sp, color = GrabGreen)
-                        }
+                        Text("Belum ada pemindaian tiket hari ini", fontSize = 11.sp, color = Color(0xFF93C5FD))
                     }
                 }
             } else {
@@ -997,33 +1101,238 @@ fun HomeTabContent(
 }
 
 @Composable
-fun QuickMenuItem(
+fun BcaGridItem(
     iconText: String,
-    iconBg: Color,
     label: String,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.clickable { onClick() }
+        modifier = modifier
+            .clickable(onClick = onClick)
+            .padding(horizontal = 4.dp, vertical = 6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Box(
-            modifier = Modifier
-                .size(48.dp)
-                .clip(CircleShape)
-                .background(iconBg),
-            contentAlignment = Alignment.Center
+        Surface(
+            modifier = Modifier.size(56.dp),
+            shape = RoundedCornerShape(16.dp),
+            color = Color(0xFF0066B3),
+            shadowElevation = 4.dp,
+            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF38BDF8).copy(alpha = 0.35f))
         ) {
-            Text(iconText, fontSize = 20.sp)
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        androidx.compose.ui.graphics.Brush.verticalGradient(
+                            listOf(Color(0xFF0072CE), Color(0xFF004F98))
+                        )
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = iconText,
+                    fontSize = 22.sp
+                )
+            }
         }
         Spacer(modifier = Modifier.height(6.dp))
         Text(
             text = label,
-            fontSize = 11.sp,
+            color = Color.White,
+            fontSize = 10.sp,
             fontWeight = FontWeight.Medium,
-            color = SlateDark,
-            textAlign = TextAlign.Center
+            textAlign = TextAlign.Center,
+            maxLines = 2,
+            modifier = Modifier.fillMaxWidth()
         )
+    }
+}
+
+@Composable
+fun BcaBottomNavigationBar(
+    currentTab: AppTab,
+    onTabSelected: (AppTab) -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(82.dp),
+        contentAlignment = Alignment.BottomCenter
+    ) {
+        // Bottom bar surface
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(64.dp),
+            color = Color.White,
+            shadowElevation = 8.dp,
+            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0))
+        ) {
+            Row(
+                modifier = Modifier.fillMaxSize(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Slot 1: Home
+                BcaBottomNavItem(
+                    modifier = Modifier.weight(1f),
+                    title = "Home",
+                    icon = "🏠",
+                    selected = currentTab == AppTab.HOME,
+                    onClick = { onTabSelected(AppTab.HOME) }
+                )
+
+                // Slot 2: Transaksi
+                BcaBottomNavItem(
+                    modifier = Modifier.weight(1f),
+                    title = "Transaksi",
+                    icon = "💳",
+                    selected = currentTab == AppTab.HISTORY,
+                    onClick = { onTabSelected(AppTab.HISTORY) }
+                )
+
+                // Center Spacer for elevated protruding button
+                Spacer(modifier = Modifier.weight(1.1f))
+
+                // Slot 4: Absen
+                BcaBottomNavItem(
+                    modifier = Modifier.weight(1f),
+                    title = "Absen",
+                    icon = "⏱️",
+                    selected = currentTab == AppTab.ABSEN,
+                    onClick = { onTabSelected(AppTab.ABSEN) }
+                )
+
+                // Slot 5: Akun Saya
+                BcaBottomNavItem(
+                    modifier = Modifier.weight(1f),
+                    title = "Akun Saya",
+                    icon = "👤",
+                    selected = currentTab == AppTab.AKUN_SAYA,
+                    onClick = { onTabSelected(AppTab.AKUN_SAYA) }
+                )
+            }
+        }
+
+        // Slot 3 (Center Elevated Protruding Scan Button)
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .offset(y = (-4).dp)
+                .clickable { onTabSelected(AppTab.SCAN) },
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Surface(
+                    modifier = Modifier.size(62.dp),
+                    shape = RoundedCornerShape(18.dp),
+                    color = Color(0xFF005BAC),
+                    shadowElevation = 8.dp,
+                    border = androidx.compose.foundation.BorderStroke(3.dp, Color.White)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(
+                                androidx.compose.ui.graphics.Brush.verticalGradient(
+                                    listOf(Color(0xFF0066B3), Color(0xFF004482))
+                                )
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "📷",
+                            fontSize = 24.sp
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = "SCAN",
+                    color = if (currentTab == AppTab.SCAN) Color(0xFF005BAC) else Color(0xFF64748B),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun BcaBottomNavItem(
+    modifier: Modifier = Modifier,
+    title: String,
+    icon: String,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .clickable(onClick = onClick),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = icon,
+            fontSize = if (selected) 20.sp else 18.sp
+        )
+        Spacer(modifier = Modifier.height(2.dp))
+        Text(
+            text = title,
+            fontSize = 11.sp,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+            color = if (selected) Color(0xFF005BAC) else Color(0xFF64748B)
+        )
+    }
+}
+
+@Composable
+fun LogoutConfirmDialog(
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            shape = RoundedCornerShape(18.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+            modifier = Modifier.fillMaxWidth().padding(8.dp)
+        ) {
+            Column(modifier = Modifier.padding(20.dp)) {
+                Text(
+                    text = "Konfirmasi Keluar",
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF0F172A)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Apakah Anda yakin ingin keluar dari sesi kasir SkyPrivilege?",
+                    fontSize = 13.sp,
+                    color = Color(0xFF64748B)
+                )
+                Spacer(modifier = Modifier.height(20.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    OutlinedButton(onClick = onDismiss, shape = RoundedCornerShape(8.dp)) {
+                        Text("Batal")
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Button(
+                        onClick = onConfirm,
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE11D48))
+                    ) {
+                        Text("Ya, Keluar", color = Color.White, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
     }
 }
 

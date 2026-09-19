@@ -7,11 +7,12 @@ class MainAppTabsTest {
 
     @Test
     fun testTabDefinitions() {
-        assertEquals(4, AppTab.values().size)
+        assertEquals(5, AppTab.values().size)
         assertEquals("Home", AppTab.HOME.title)
-        assertEquals("History", AppTab.HISTORY.title)
+        assertEquals("Transaksi", AppTab.HISTORY.title)
         assertEquals("Scan", AppTab.SCAN.title)
         assertEquals("Absen", AppTab.ABSEN.title)
+        assertEquals("Akun Saya", AppTab.AKUN_SAYA.title)
     }
 
     @Test
