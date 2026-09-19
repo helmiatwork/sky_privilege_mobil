@@ -30,6 +30,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.skyprivilege.ui.components.FlatProfileIcon
 
 @Composable
 fun EditProfileDialog(
@@ -49,12 +50,16 @@ fun EditProfileDialog(
             modifier = Modifier.fillMaxWidth().padding(8.dp)
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
-                Text(
-                    text = "👤 Ubah Nama Profil",
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF0F172A)
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    FlatProfileIcon(tint = Color(0xFF005BAC), size = 20.dp)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Ubah Nama Profil",
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF0F172A)
+                    )
+                }
                 Text(
                     text = "Perbarui nama tampilan kasir yang tercatat di sistem",
                     fontSize = 12.sp,

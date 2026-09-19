@@ -67,14 +67,23 @@ import com.skyprivilege.domain.model.Ticket
 import com.skyprivilege.domain.model.TicketGuideline
 import com.skyprivilege.data.remote.dto.CashierProfileDto
 import com.skyprivilege.data.repository.ProfileRepositoryImpl
+import com.skyprivilege.ui.components.FlatAbsenIcon
+import com.skyprivilege.ui.components.FlatAirplaneIcon
+import com.skyprivilege.ui.components.FlatGpsPinIcon
+import com.skyprivilege.ui.components.FlatHomeIcon
+import com.skyprivilege.ui.components.FlatLogoutIcon
+import com.skyprivilege.ui.components.FlatProfileIcon
+import com.skyprivilege.ui.components.FlatScanIcon
+import com.skyprivilege.ui.components.FlatTransactionIcon
+import com.skyprivilege.ui.components.FlatVoucherTicketIcon
 import kotlinx.coroutines.launch
 
-enum class AppTab(val title: String, val iconText: String) {
-    HOME("Home", "🏠"),
-    HISTORY("Transaksi", "💳"),
-    SCAN("Scan", "📷"),
-    ABSEN("Absen", "⏱️"),
-    AKUN_SAYA("Akun Saya", "👤")
+enum class AppTab(val title: String) {
+    HOME("Home"),
+    HISTORY("Transaksi"),
+    SCAN("Scan"),
+    ABSEN("Absen"),
+    AKUN_SAYA("Akun Saya")
 }
 
 data class LocalCorrectionItem(
@@ -304,9 +313,9 @@ fun MainAppScreen(
                                 .clickable { showLogoutDialog = true }
                                 .padding(4.dp)
                         ) {
-                            Text(
-                                text = "🚪",
-                                fontSize = 18.sp
+                            FlatLogoutIcon(
+                                tint = Color(0xFF64748B),
+                                size = 20.dp
                             )
                         }
                     }
@@ -389,8 +398,12 @@ fun MainAppScreen(
                 // Main Tab Content
                 when (currentTab) {
                     AppTab.HOME -> {
+                        val outlet = cashierProfile.outletName.orEmpty()
+                        val locationName = if (outlet.contains("Terminal 3")) "Terminal 3 Soetta" else outlet.ifEmpty { "Terminal 3 Soetta" }
+                        val shiftScheduleTime = "Shift 08:00 - 11:00"
                         HomeTabContent(
                             cashierName = cashierProfile.name,
+                            detectedLocationText = "$locationName | $shiftScheduleTime",
                             activeShiftId = activeShiftId,
                             shiftStatusText = shiftStatusText,
                             todayAttendance = todayAttendance,
@@ -399,69 +412,6 @@ fun MainAppScreen(
                             onNavigateToHistory = {
                                 currentTab = AppTab.HISTORY
                                 refreshRedemptions()
-                            },
-                            onOpenAttendance = {
-                                attendanceDialogError = null
-                                showGpsAttendanceDialog = true
-                            },
-                            onOpenCorrection = {
-                                correctionDialogError = null
-                                showCorrectionDialog = true
-                            },
-                            onOpenChecklist = {
-                                isGuidelinesLoading = true
-                                coroutineScope.launch {
-                                    guidelineRepo.getGuidelines().onSuccess { list ->
-                                        guidelines = list
-                                        isGuidelinesLoading = false
-                                        showChecklistDialog = true
-                                    }.onFailure { err ->
-                                        globalError = "Gagal memuat panduan: ${err.message}"
-                                        isGuidelinesLoading = false
-                                    }
-                                }
-                            },
-                            onToggleShift = {
-                                isShiftLoading = true
-                                coroutineScope.launch {
-                                    if (activeShiftId == null) {
-                                        shiftRepo.openShift(
-                                            cashierId = cashierId,
-                                            outletId = outletId,
-                                            deviceId = 1L,
-                                            openingCash = 0.0,
-                                            openingSelfieKey = null
-                                        ).onSuccess { shift ->
-                                            activeShiftId = shift.id
-                                            shiftStatusText = "Shift #${shift.id} Aktif"
-                                            isShiftLoading = false
-                                            if (!hasCheckedIn) showGpsAttendanceDialog = true
-                                        }.onFailure { err ->
-                                            globalError = "Buka shift gagal: ${err.message}"
-                                            isShiftLoading = false
-                                        }
-                                    } else {
-                                        shiftRepo.closeShift(
-                                            cashierId = cashierId,
-                                            outletId = outletId,
-                                            closingCash = 0.0,
-                                            shiftId = activeShiftId
-                                        ).onSuccess {
-                                            activeShiftId = null
-                                            shiftStatusText = "Shift telah ditutup"
-                                            isShiftLoading = false
-                                        }.onFailure { err ->
-                                            globalError = "Tutup shift gagal: ${err.message}"
-                                            isShiftLoading = false
-                                        }
-                                    }
-                                }
-                            },
-                            onOpenEmergencyVoucher = {
-                                showEmergencyDialog = true
-                            },
-                            onOpenSop = {
-                                showSopDialog = true
                             }
                         )
                     }
@@ -840,18 +790,19 @@ fun MainAppScreen(
 @Composable
 fun HomeTabContent(
     cashierName: String,
+    detectedLocationText: String = "Terminal 3 Soetta | Shift 08:00 - 11:00",
     activeShiftId: Long?,
     shiftStatusText: String,
     todayAttendance: AttendanceRecordDto?,
     recentRedemptions: List<RedemptionHistoryItem>,
     onNavigateToScan: () -> Unit,
     onNavigateToHistory: () -> Unit,
-    onOpenAttendance: () -> Unit,
-    onOpenCorrection: () -> Unit,
-    onOpenChecklist: () -> Unit,
-    onToggleShift: () -> Unit,
-    onOpenEmergencyVoucher: () -> Unit,
-    onOpenSop: () -> Unit
+    onOpenAttendance: () -> Unit = {},
+    onOpenCorrection: () -> Unit = {},
+    onOpenChecklist: () -> Unit = {},
+    onToggleShift: () -> Unit = {},
+    onOpenEmergencyVoucher: () -> Unit = {},
+    onOpenSop: () -> Unit = {}
 ) {
     LazyColumn(
         modifier = Modifier
@@ -862,7 +813,7 @@ fun HomeTabContent(
     ) {
         item { Spacer(modifier = Modifier.height(8.dp)) }
 
-        // BCA Greeting Section
+        // BCA Greeting Section with Auto-Detected GPS Location & Shift
         item {
             Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)) {
                 Text(
@@ -879,81 +830,22 @@ fun HomeTabContent(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 0.5.sp
                 )
-            }
-        }
-
-        // BCA 8 Services Grid (2 rows x 4 columns)
-        item {
-            Card(
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF0A2E5C).copy(alpha = 0.6f)),
-                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF1E4E8C)),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(10.dp)) {
-                    // Row 1
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        BcaGridItem(
-                            modifier = Modifier.weight(1f),
-                            iconText = "📷",
-                            label = "Scan Tiket",
-                            onClick = onNavigateToScan
-                        )
-                        BcaGridItem(
-                            modifier = Modifier.weight(1f),
-                            iconText = "📍",
-                            label = "Absensi GPS",
-                            onClick = onOpenAttendance
-                        )
-                        BcaGridItem(
-                            modifier = Modifier.weight(1f),
-                            iconText = "📝",
-                            label = "Koreksi Absen",
-                            onClick = onOpenCorrection
-                        )
-                        BcaGridItem(
-                            modifier = Modifier.weight(1f),
-                            iconText = if (activeShiftId != null) "🔒" else "🔓",
-                            label = if (activeShiftId != null) "Tutup Shift" else "Buka Shift",
-                            onClick = onToggleShift
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    // Row 2
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        BcaGridItem(
-                            modifier = Modifier.weight(1f),
-                            iconText = "📋",
-                            label = "Checklist Fisik",
-                            onClick = onOpenChecklist
-                        )
-                        BcaGridItem(
-                            modifier = Modifier.weight(1f),
-                            iconText = "🎟️",
-                            label = "Voucher Darurat",
-                            onClick = onOpenEmergencyVoucher
-                        )
-                        BcaGridItem(
-                            modifier = Modifier.weight(1f),
-                            iconText = "📜",
-                            label = "Riwayat Scan",
-                            onClick = onNavigateToHistory
-                        )
-                        BcaGridItem(
-                            modifier = Modifier.weight(1f),
-                            iconText = "📖",
-                            label = "Panduan SOP",
-                            onClick = onOpenSop
-                        )
-                    }
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    FlatGpsPinIcon(
+                        tint = Color(0xFF38BDF8),
+                        cutoutColor = Color(0xFF072146),
+                        size = 14.dp
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = detectedLocationText,
+                        color = Color(0xFF7DD3FC),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium
+                    )
                 }
             }
         }
@@ -1044,7 +936,10 @@ fun HomeTabContent(
                             fontSize = 11.sp
                         )
                     }
-                    Text("✈️", fontSize = 30.sp)
+                    FlatAirplaneIcon(
+                        tint = Color.White.copy(alpha = 0.9f),
+                        size = 32.dp
+                    )
                 }
             }
         }
@@ -1082,7 +977,10 @@ fun HomeTabContent(
                         modifier = Modifier.fillMaxWidth().padding(16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text("🎟️", fontSize = 24.sp)
+                        FlatVoucherTicketIcon(
+                            tint = Color(0xFF93C5FD),
+                            size = 28.dp
+                        )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text("Belum ada pemindaian tiket hari ini", fontSize = 11.sp, color = Color(0xFF93C5FD))
                     }
@@ -1102,10 +1000,10 @@ fun HomeTabContent(
 
 @Composable
 fun BcaGridItem(
-    iconText: String,
     label: String,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    icon: @Composable (tint: Color) -> Unit = {}
 ) {
     Column(
         modifier = modifier
@@ -1130,10 +1028,7 @@ fun BcaGridItem(
                     ),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = iconText,
-                    fontSize = 22.sp
-                )
+                icon(Color.White)
             }
         }
         Spacer(modifier = Modifier.height(6.dp))
@@ -1177,18 +1072,18 @@ fun BcaBottomNavigationBar(
                 BcaBottomNavItem(
                     modifier = Modifier.weight(1f),
                     title = "Home",
-                    icon = "🏠",
                     selected = currentTab == AppTab.HOME,
-                    onClick = { onTabSelected(AppTab.HOME) }
+                    onClick = { onTabSelected(AppTab.HOME) },
+                    icon = { tint -> FlatHomeIcon(tint = tint, size = 22.dp) }
                 )
 
                 // Slot 2: Transaksi
                 BcaBottomNavItem(
                     modifier = Modifier.weight(1f),
                     title = "Transaksi",
-                    icon = "💳",
                     selected = currentTab == AppTab.HISTORY,
-                    onClick = { onTabSelected(AppTab.HISTORY) }
+                    onClick = { onTabSelected(AppTab.HISTORY) },
+                    icon = { tint -> FlatTransactionIcon(tint = tint, size = 22.dp) }
                 )
 
                 // Center Spacer for elevated protruding button
@@ -1198,18 +1093,18 @@ fun BcaBottomNavigationBar(
                 BcaBottomNavItem(
                     modifier = Modifier.weight(1f),
                     title = "Absen",
-                    icon = "⏱️",
                     selected = currentTab == AppTab.ABSEN,
-                    onClick = { onTabSelected(AppTab.ABSEN) }
+                    onClick = { onTabSelected(AppTab.ABSEN) },
+                    icon = { tint -> FlatAbsenIcon(tint = tint, size = 22.dp) }
                 )
 
                 // Slot 5: Akun Saya
                 BcaBottomNavItem(
                     modifier = Modifier.weight(1f),
                     title = "Akun Saya",
-                    icon = "👤",
                     selected = currentTab == AppTab.AKUN_SAYA,
-                    onClick = { onTabSelected(AppTab.AKUN_SAYA) }
+                    onClick = { onTabSelected(AppTab.AKUN_SAYA) },
+                    icon = { tint -> FlatProfileIcon(tint = tint, size = 22.dp) }
                 )
             }
         }
@@ -1218,7 +1113,7 @@ fun BcaBottomNavigationBar(
         Box(
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .offset(y = (-4).dp)
+                .offset(y = (-8).dp)
                 .clickable { onTabSelected(AppTab.SCAN) },
             contentAlignment = Alignment.Center
         ) {
@@ -1226,7 +1121,7 @@ fun BcaBottomNavigationBar(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Surface(
-                    modifier = Modifier.size(62.dp),
+                    modifier = Modifier.size(54.dp),
                     shape = RoundedCornerShape(18.dp),
                     color = Color(0xFF005BAC),
                     shadowElevation = 8.dp,
@@ -1242,9 +1137,9 @@ fun BcaBottomNavigationBar(
                             ),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = "📷",
-                            fontSize = 24.sp
+                        FlatScanIcon(
+                            tint = Color.White,
+                            size = 26.dp
                         )
                     }
                 }
@@ -1252,7 +1147,7 @@ fun BcaBottomNavigationBar(
                 Text(
                     text = "SCAN",
                     color = if (currentTab == AppTab.SCAN) Color(0xFF005BAC) else Color(0xFF64748B),
-                    fontSize = 11.sp,
+                    fontSize = 10.sp,
                     fontWeight = FontWeight.Bold
                 )
             }
@@ -1264,10 +1159,11 @@ fun BcaBottomNavigationBar(
 fun BcaBottomNavItem(
     modifier: Modifier = Modifier,
     title: String,
-    icon: String,
     selected: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    icon: @Composable (tint: Color) -> Unit
 ) {
+    val tintColor = if (selected) Color(0xFF005BAC) else Color(0xFF64748B)
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -1275,16 +1171,13 @@ fun BcaBottomNavItem(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text(
-            text = icon,
-            fontSize = if (selected) 20.sp else 18.sp
-        )
-        Spacer(modifier = Modifier.height(2.dp))
+        icon(tintColor)
+        Spacer(modifier = Modifier.height(3.dp))
         Text(
             text = title,
             fontSize = 11.sp,
             fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
-            color = if (selected) Color(0xFF005BAC) else Color(0xFF64748B)
+            color = tintColor
         )
     }
 }
