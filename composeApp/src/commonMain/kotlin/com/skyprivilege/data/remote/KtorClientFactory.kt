@@ -11,7 +11,9 @@ import kotlinx.serialization.json.Json
 
 object KtorClientFactory {
     fun createHttpClient(
-        baseUrl: String = "https://api.skyprivilege.id",
+        baseUrl: String = "http://10.0.2.2:3000",
+        deviceId: String = "DEV-TABLET-001",
+        outletId: Long = 1L,
         authTokenProvider: (() -> String?)? = null
     ): HttpClient {
         return HttpClient {
@@ -26,6 +28,8 @@ object KtorClientFactory {
             defaultRequest {
                 url(baseUrl)
                 contentType(ContentType.Application.Json)
+                header("X-Device-Id", deviceId)
+                header("X-Outlet-Id", outletId.toString())
                 authTokenProvider?.invoke()?.let { token ->
                     header("Authorization", "Bearer $token")
                 }
