@@ -19,6 +19,7 @@ data class RedemptionClaim(
     val cashierId: Long,
     val amountCents: Long,
     val claimToken: String? = null,
+    val shiftId: Long? = null,
     val status: ClaimStatus = ClaimStatus.PENDING,
     val trustScore: Float = 0.0f,
     val timestampEpochMs: Long = 0L
