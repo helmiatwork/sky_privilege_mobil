@@ -94,4 +94,18 @@ class AttendanceRepositoryImpl(
             }
         }
     }
+
+    override suspend fun getAttendanceHistory(cashierId: Long): Result<List<com.skyprivilege.domain.model.AttendanceHistoryItem>> {
+        return runCatching {
+            val response = httpClient.get("/api/v1/attendances") {
+                parameter("cashier_id", cashierId)
+            }.body<com.skyprivilege.data.remote.dto.AttendanceListResponse>()
+
+            if (response.success) {
+                response.attendances
+            } else {
+                throw IllegalStateException(response.error ?: "Gagal memuat riwayat absensi")
+            }
+        }
+    }
 }

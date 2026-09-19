@@ -24,4 +24,6 @@ interface RedemptionRepository {
         supervisorPin: String,
         reason: String
     ): Result<Boolean>
+
+    suspend fun getRedemptions(cashierId: Long): Result<List<com.skyprivilege.domain.model.RedemptionHistoryItem>>
 }

@@ -23,3 +23,11 @@ data class ClaimDiscountResponse(
     @SerialName("expires_in") val expiresInSeconds: Int? = null,
     val error: String? = null
 )
+
+@Serializable
+data class RedemptionsListResponse(
+    val success: Boolean,
+    val redemptions: List<com.skyprivilege.domain.model.RedemptionHistoryItem> = emptyList(),
+    val error: String? = null
+)
+

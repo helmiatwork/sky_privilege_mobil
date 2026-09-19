@@ -166,4 +166,51 @@ class AttendanceRepositoryTest {
         assertEquals(99L, response.correctionRequest?.id)
         assertEquals("pending", response.correctionRequest?.status)
     }
+
+    @Test
+    fun testGetAttendanceHistorySuccess() = runTest {
+        val mockEngine = MockEngine { request ->
+            assertEquals("/api/v1/attendances", request.url.encodedPath)
+            assertEquals("2", request.url.parameters["cashier_id"])
+            respond(
+                content = """
+                    {
+                        "success": true,
+                        "attendances": [
+                            {
+                                "id": 505,
+                                "date": "2026-09-19",
+                                "date_formatted": "Sat, 19 Sep 2026",
+                                "check_in_at": "06:05",
+                                "check_out_at": "15:00",
+                                "status": "completed",
+                                "check_in_lat": -6.125605,
+                                "check_in_lng": 106.655805,
+                                "check_in_accuracy": 12.0
+                            }
+                        ]
+                    }
+                """.trimIndent(),
+                status = HttpStatusCode.OK,
+                headers = headersOf(HttpHeaders.ContentType, "application/json")
+            )
+        }
+
+        val client = HttpClient(mockEngine) {
+            install(ContentNegotiation) { json(json) }
+        }
+
+        val repository = AttendanceRepositoryImpl(client)
+        val result = repository.getAttendanceHistory(cashierId = 2L)
+
+        assertTrue(result.isSuccess)
+        val list = result.getOrNull()
+        assertNotNull(list)
+        assertEquals(1, list.size)
+        val item = list.first()
+        assertEquals(505L, item.id)
+        assertEquals("Sat, 19 Sep 2026", item.dateFormatted)
+        assertEquals("06:05", item.checkInAt)
+        assertEquals("completed", item.status)
+    }
 }
