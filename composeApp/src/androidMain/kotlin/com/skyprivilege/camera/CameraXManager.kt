@@ -50,7 +50,19 @@ class CameraXManager(private val context: Context) {
         }, ContextCompat.getMainExecutor(context))
     }
 
+    fun stopCamera() {
+        val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
+        cameraProviderFuture.addListener({
+            try {
+                cameraProviderFuture.get().unbindAll()
+            } catch (exc: Exception) {
+                exc.printStackTrace()
+            }
+        }, ContextCompat.getMainExecutor(context))
+    }
+
     fun shutdown() {
+        stopCamera()
         cameraExecutor.shutdown()
     }
 }
