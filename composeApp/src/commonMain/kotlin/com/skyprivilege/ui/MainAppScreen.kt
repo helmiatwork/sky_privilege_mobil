@@ -42,7 +42,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.skyprivilege.data.remote.KtorClientFactory
+import com.skyprivilege.data.remote.dto.AttendanceRecordDto
 import com.skyprivilege.data.remote.dto.AuthenticityAcknowledgmentDto
+import com.skyprivilege.data.repository.AttendanceRepositoryImpl
 import com.skyprivilege.data.repository.GuidelineRepositoryImpl
 import com.skyprivilege.data.repository.RedemptionRepositoryImpl
 import com.skyprivilege.data.repository.ShiftRepositoryImpl
@@ -75,6 +77,7 @@ fun MainAppScreen(
     val shiftRepo = remember(httpClient) { ShiftRepositoryImpl(httpClient) }
     val ticketRepo = remember(httpClient) { TicketRepositoryImpl(httpClient) }
     val redemptionRepo = remember(httpClient) { RedemptionRepositoryImpl(httpClient) }
+    val attendanceRepo = remember(httpClient) { AttendanceRepositoryImpl(httpClient) }
 
     val coroutineScope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
@@ -83,6 +86,17 @@ fun MainAppScreen(
     var activeShiftId by remember { mutableStateOf<Long?>(null) }
     var shiftStatusText by remember { mutableStateOf("Belum ada shift terbuka") }
     var isShiftLoading by remember { mutableStateOf(false) }
+
+    var todayAttendance by remember { mutableStateOf<AttendanceRecordDto?>(null) }
+    var hasCheckedIn by remember { mutableStateOf(false) }
+    var hasCheckedOut by remember { mutableStateOf(false) }
+    var showGpsAttendanceDialog by remember { mutableStateOf(false) }
+    var isAttendanceSubmitting by remember { mutableStateOf(false) }
+    var attendanceDialogError by remember { mutableStateOf<String?>(null) }
+    var showCorrectionDialog by remember { mutableStateOf(false) }
+    var isCorrectionSubmitting by remember { mutableStateOf(false) }
+    var correctionDialogError by remember { mutableStateOf<String?>(null) }
+    var attendanceSuccessToast by remember { mutableStateOf<String?>(null) }
 
     var showChecklistDialog by remember { mutableStateOf(false) }
     var guidelines by remember { mutableStateOf<List<TicketGuideline>>(emptyList()) }
@@ -99,12 +113,19 @@ fun MainAppScreen(
     var redemptionSuccessMsg by remember { mutableStateOf<String?>(null) }
     var globalError by remember { mutableStateOf<String?>(null) }
 
-    // Load initial shift status
+    // Load initial shift and attendance status
     LaunchedEffect(httpClient) {
         shiftRepo.getCurrentShift(cashierId, outletId).onSuccess { res ->
             if (res.success && res.shift != null) {
                 activeShiftId = res.shift.id
                 shiftStatusText = "Shift #${res.shift.id} Aktif (Total Klaim: ${res.shift.totalRedemptionsCount})"
+            }
+        }
+        attendanceRepo.getTodayAttendance(cashierId, outletId).onSuccess { res ->
+            if (res.success) {
+                todayAttendance = res.attendance
+                hasCheckedIn = res.hasCheckedIn
+                hasCheckedOut = res.hasCheckedOut
             }
         }
     }
@@ -198,6 +219,54 @@ fun MainAppScreen(
                 }
             }
 
+            // Attendance Success Toast
+            if (attendanceSuccessToast != null) {
+                Card(
+                    shape = RoundedCornerShape(10.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFDCFCE7)),
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "✅ " + attendanceSuccessToast!!,
+                            color = Color(0xFF15803D),
+                            fontSize = 12.sp,
+                            modifier = Modifier.weight(1f)
+                        )
+                        OutlinedButton(
+                            onClick = { attendanceSuccessToast = null },
+                            modifier = Modifier.height(30.dp)
+                        ) {
+                            Text("Tutup", fontSize = 10.sp)
+                        }
+                    }
+                }
+            }
+
+            // Attendance Card (Matching Reference Image 1)
+            AttendanceCard(
+                cashierName = "Kasir Terminal 3",
+                cashierRole = "Staff Kasir & Operator POS",
+                shiftInfo = if (activeShiftId != null) "Shift #${activeShiftId} Aktif" else "Shift Pagi (07:00 - 15:00)",
+                todayText = "Sabtu, 19 Sep 2026",
+                checkInTime = todayAttendance?.checkInAt?.let { if (it.length >= 16) it.substring(11, 16) else it },
+                checkOutTime = todayAttendance?.checkOutAt?.let { if (it.length >= 16) it.substring(11, 16) else it },
+                status = todayAttendance?.status,
+                onRecordTimeClick = {
+                    attendanceDialogError = null
+                    showGpsAttendanceDialog = true
+                },
+                onCorrectionClick = {
+                    correctionDialogError = null
+                    showCorrectionDialog = true
+                }
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
             // Section 1: Shift Kasir
             Card(
                 shape = RoundedCornerShape(14.dp),
@@ -237,6 +306,9 @@ fun MainAppScreen(
                                             activeShiftId = shift.id
                                             shiftStatusText = "Shift #${shift.id} Aktif"
                                             isShiftLoading = false
+                                            if (!hasCheckedIn) {
+                                                showGpsAttendanceDialog = true
+                                            }
                                         }.onFailure { err ->
                                             globalError = "Buka shift gagal: ${err.message}"
                                             isShiftLoading = false
@@ -606,6 +678,80 @@ fun MainAppScreen(
                             isChecklistSubmitting = false
                             globalError = "Gagal merekam audit checklist: ${err.message}"
                             showChecklistDialog = false
+                        }
+                    }
+                }
+            )
+        }
+
+        // GPS Attendance Modal Dialog (Matching Reference Image 0)
+        if (showGpsAttendanceDialog) {
+            GpsAttendanceDialog(
+                cashierName = "Kasir Terminal 3 (CSH-001)",
+                deviceId = deviceId,
+                clientIp = "192.168.1.45",
+                currentDateText = "Sabtu, 19 September 2026",
+                currentTimeText = "08:15:30 WIB",
+                suggestedType = if (hasCheckedIn && !hasCheckedOut) "check_out" else "check_in",
+                latitude = -6.1256,
+                longitude = 106.6558,
+                accuracyMeters = 15.0f,
+                isSubmitting = isAttendanceSubmitting,
+                errorMessage = attendanceDialogError,
+                onDismiss = { showGpsAttendanceDialog = false },
+                onSaveAttendance = { type, lat, lng, acc ->
+                    isAttendanceSubmitting = true
+                    attendanceDialogError = null
+                    coroutineScope.launch {
+                        attendanceRepo.recordAttendance(
+                            cashierId = cashierId,
+                            outletId = outletId,
+                            type = type,
+                            latitude = lat,
+                            longitude = lng,
+                            accuracy = acc
+                        ).onSuccess { res ->
+                            isAttendanceSubmitting = false
+                            showGpsAttendanceDialog = false
+                            todayAttendance = res.attendance
+                            if (res.action == "check_in") hasCheckedIn = true
+                            if (res.action == "check_out") hasCheckedOut = true
+                            attendanceSuccessToast = res.message ?: "Absensi GPS berhasil dicatat"
+                        }.onFailure { err ->
+                            isAttendanceSubmitting = false
+                            attendanceDialogError = err.message ?: "Gagal mencatat absensi GPS"
+                        }
+                    }
+                }
+            )
+        }
+
+        // Attendance Correction Request Modal Dialog
+        if (showCorrectionDialog) {
+            AttendanceCorrectionDialog(
+                initialDate = "2026-09-19",
+                isSubmitting = isCorrectionSubmitting,
+                errorMessage = correctionDialogError,
+                onDismiss = { showCorrectionDialog = false },
+                onSubmitCorrection = { targetDate, corrType, inTime, outTime, rsn ->
+                    isCorrectionSubmitting = true
+                    correctionDialogError = null
+                    coroutineScope.launch {
+                        attendanceRepo.submitCorrectionRequest(
+                            cashierId = cashierId,
+                            outletId = outletId,
+                            targetDate = targetDate,
+                            correctionType = corrType,
+                            requestedCheckInAt = inTime,
+                            requestedCheckOutAt = outTime,
+                            reason = rsn
+                        ).onSuccess { res ->
+                            isCorrectionSubmitting = false
+                            showCorrectionDialog = false
+                            attendanceSuccessToast = res.message ?: "Pengajuan koreksi absensi berhasil dikirim"
+                        }.onFailure { err ->
+                            isCorrectionSubmitting = false
+                            correctionDialogError = err.message ?: "Gagal mengirim pengajuan koreksi"
                         }
                     }
                 }

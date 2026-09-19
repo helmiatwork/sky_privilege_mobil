@@ -30,7 +30,8 @@ data class SubmitRedemptionRequest(
     @SerialName("flight_number") val flightNumber: String,
     @SerialName("passenger_name") val passengerName: String? = null,
     @SerialName("raw_pnr") val rawPnr: String? = null,
-    @SerialName("shift_id") val shiftId: Long? = null
+    @SerialName("shift_id") val shiftId: Long? = null,
+    @SerialName("ticket_photo") val ticketPhoto: String? = null
 )
 
 @Serializable
@@ -106,7 +107,8 @@ class RedemptionRepositoryImpl(
                         flightNumber = claim.ticket.flightNumber,
                         passengerName = claim.ticket.passengerName,
                         rawPnr = claim.ticket.pnr,
-                        shiftId = claim.shiftId
+                        shiftId = claim.shiftId,
+                        ticketPhoto = claim.ticketPhoto
                     )
                 )
             }
