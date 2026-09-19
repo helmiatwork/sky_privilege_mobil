@@ -59,8 +59,8 @@ fun MainAppScreen(
     initialBaseUrl: String = "http://10.0.2.2:3001"
 ) {
     var baseUrl by remember { mutableStateOf(initialBaseUrl) }
-    val outletId = 1L
-    val cashierId = 1L
+    val outletId = 2L
+    val cashierId = 2L
     val deviceId = "DEV-TABLET-001"
 
     val httpClient = remember(baseUrl) {
