@@ -36,6 +36,7 @@ import com.skyprivilege.data.remote.dto.CashierProfileDto
 import com.skyprivilege.ui.components.FlatEditIcon
 import com.skyprivilege.ui.components.FlatLockShiftIcon
 import com.skyprivilege.ui.components.FlatLogoutIcon
+import com.skyprivilege.ui.components.SkyPullRefreshBox
 
 @Composable
 fun AkunSayaTabContent(
@@ -47,13 +48,18 @@ fun AkunSayaTabContent(
     onOpenChangePassword: () -> Unit,
     onLogout: () -> Unit
 ) {
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFFF1F5F9))
-            .padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+    SkyPullRefreshBox(
+        refreshing = isLoading,
+        onRefresh = onRefresh,
+        modifier = Modifier.fillMaxSize().background(Color(0xFFF1F5F9)),
+        indicatorColor = Color(0xFF005BAC)
     ) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
         item { Spacer(modifier = Modifier.height(4.dp)) }
 
         // Header Title Card
@@ -305,6 +311,7 @@ fun AkunSayaTabContent(
             }
             Spacer(modifier = Modifier.height(20.dp))
         }
+    }
     }
 }
 

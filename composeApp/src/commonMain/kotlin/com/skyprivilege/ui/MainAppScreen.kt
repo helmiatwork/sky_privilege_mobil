@@ -84,6 +84,7 @@ import com.skyprivilege.ui.components.FlatProfileIcon
 import com.skyprivilege.ui.components.FlatScanIcon
 import com.skyprivilege.ui.components.FlatTransactionIcon
 import com.skyprivilege.ui.components.FlatVoucherTicketIcon
+import com.skyprivilege.ui.components.SkyPullRefreshBox
 import kotlinx.coroutines.launch
 
 enum class AppTab(val title: String) {
@@ -245,9 +246,44 @@ fun MainAppScreen(
         }
     }
 
+    var isHomeLoading by remember { mutableStateOf(false) }
+
+    fun refreshHome() {
+        isHomeLoading = true
+        coroutineScope.launch {
+            shiftRepo.getCurrentShift(cashierId, outletId).onSuccess { res ->
+                if (res.success && res.shift != null) {
+                    activeShiftId = res.shift.id
+                    shiftStatusText = "Shift #${res.shift.id} Aktif (Total Klaim: ${res.shift.totalRedemptionsCount})"
+                }
+            }
+            attendanceRepo.getTodayAttendance(cashierId, outletId).onSuccess { res ->
+                if (res.success) {
+                    todayAttendance = res.attendance
+                    hasCheckedIn = res.hasCheckedIn
+                    hasCheckedOut = res.hasCheckedOut
+                }
+            }
+            redemptionRepo.getRedemptions(cashierId, todayOnly = true).onSuccess { list ->
+                redemptionHistoryList = list
+            }
+            profileRepo.getProfile(cashierId).onSuccess { prof ->
+                cashierProfile = prof
+            }
+            isHomeLoading = false
+        }
+    }
+
     fun refreshAttendances() {
         isAttendancesLoading = true
         coroutineScope.launch {
+            attendanceRepo.getTodayAttendance(cashierId, outletId).onSuccess { res ->
+                if (res.success) {
+                    todayAttendance = res.attendance
+                    hasCheckedIn = res.hasCheckedIn
+                    hasCheckedOut = res.hasCheckedOut
+                }
+            }
             attendanceRepo.getAttendanceHistory(cashierId).onSuccess { list ->
                 attendanceHistoryList = list
                 isAttendancesLoading = false
@@ -460,6 +496,8 @@ fun MainAppScreen(
                             shiftStatusText = shiftStatusText,
                             todayAttendance = todayAttendance,
                             recentRedemptions = todayRedemptions.take(1),
+                            isRefreshing = isHomeLoading,
+                            onRefresh = { refreshHome() },
                             onNavigateToScan = { startScanFlow() },
                             onNavigateToHistory = {
                                 currentTab = AppTab.HISTORY
@@ -896,6 +934,8 @@ fun HomeTabContent(
     shiftStatusText: String,
     todayAttendance: AttendanceRecordDto?,
     recentRedemptions: List<RedemptionHistoryItem>,
+    isRefreshing: Boolean = false,
+    onRefresh: () -> Unit = {},
     onNavigateToScan: () -> Unit,
     onNavigateToHistory: () -> Unit,
     onRedemptionClick: (RedemptionHistoryItem) -> Unit = {},
@@ -906,13 +946,20 @@ fun HomeTabContent(
     onOpenEmergencyVoucher: () -> Unit = {},
     onOpenSop: () -> Unit = {}
 ) {
-    LazyColumn(
+    SkyPullRefreshBox(
+        refreshing = isRefreshing,
+        onRefresh = onRefresh,
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF072146))
-            .padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .background(Color(0xFF072146)),
+        indicatorColor = Color(0xFF005BAC)
     ) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
         item { Spacer(modifier = Modifier.height(8.dp)) }
 
         // BCA Greeting Section with Auto-Detected GPS Location & Shift
@@ -1076,6 +1123,7 @@ fun HomeTabContent(
         }
 
         item { Spacer(modifier = Modifier.height(16.dp)) }
+    }
     }
 }
 
@@ -1326,118 +1374,112 @@ fun HistoryTabContent(
     val totalDiscount = todayRedemptions.sumOf { it.discountAmount.toLong() }
     val displayedRedemptions = todayRedemptions
 
-    Column(
-        modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)
+    SkyPullRefreshBox(
+        refreshing = isLoading,
+        onRefresh = onRefresh,
+        modifier = Modifier.fillMaxSize(),
+        indicatorColor = GrabGreen
     ) {
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // Title Header
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+        LazyColumn(
+            modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Column {
-                Text(
-                    text = "Riwayat Pemindaian Tiket",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp,
-                    color = SlateDark
-                )
-                Text(
-                    text = "Daftar klaim diskon boarding pass hari ini",
-                    fontSize = 12.sp,
-                    color = SlateSubtle
-                )
-            }
-            OutlinedButton(
-                onClick = onRefresh,
-                modifier = Modifier.height(32.dp),
-                enabled = !isLoading
-            ) {
-                if (isLoading) {
-                    CircularProgressIndicator(modifier = Modifier.size(12.dp), color = GrabGreen)
-                } else {
-                    Text("🔄 Muat Ulang", fontSize = 11.sp, color = GrabGreen)
-                }
-            }
-        }
+            item { Spacer(modifier = Modifier.height(12.dp)) }
 
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // Summary Metric Cards (Total Klaim & Total Diskon Hari Ini)
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Card(
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-                modifier = Modifier.weight(1f)
-            ) {
-                Column(modifier = Modifier.padding(12.dp)) {
-                    Text("Total Klaim Hari Ini", fontSize = 11.sp, color = SlateSubtle)
-                    Spacer(modifier = Modifier.height(4.dp))
+            // Title Header (Clean without reload button)
+            item {
+                Column(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     Text(
-                        text = "$totalApproved Tiket",
+                        text = "Riwayat Pemindaian Tiket",
                         fontWeight = FontWeight.Bold,
                         fontSize = 18.sp,
                         color = SlateDark
                     )
-                }
-            }
-
-            Card(
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-                modifier = Modifier.weight(1f)
-            ) {
-                Column(modifier = Modifier.padding(12.dp)) {
-                    Text("Total Diskon Hari Ini", fontSize = 11.sp, color = SlateSubtle)
-                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "Rp ${formatRupiah(totalDiscount)}",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp,
-                        color = GrabGreen
-                    )
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(14.dp))
-
-        // Redemption List
-        if (displayedRedemptions.isEmpty() && !isLoading) {
-            Box(
-                modifier = Modifier.fillMaxSize().padding(32.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("📜", fontSize = 48.sp)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Belum Ada Riwayat Hari Ini",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 15.sp,
-                        color = SlateDark
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "Lakukan pemindaian tiket di tab Scan untuk memulai klaim diskon penumpang.",
+                        text = "Daftar klaim diskon boarding pass hari ini",
                         fontSize = 12.sp,
-                        color = SlateSubtle,
-                        textAlign = TextAlign.Center
+                        color = SlateSubtle
                     )
                 }
             }
-        } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
+
+            item { Spacer(modifier = Modifier.height(2.dp)) }
+
+            // Summary Metric Cards (Total Klaim & Total Diskon Hari Ini)
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Card(
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text("Total Klaim Hari Ini", fontSize = 11.sp, color = SlateSubtle)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "$totalApproved Tiket",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 18.sp,
+                                color = SlateDark
+                            )
+                        }
+                    }
+
+                    Card(
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text("Total Diskon Hari Ini", fontSize = 11.sp, color = SlateSubtle)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Rp ${formatRupiah(totalDiscount)}",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 18.sp,
+                                color = GrabGreen
+                            )
+                        }
+                    }
+                }
+            }
+
+            item { Spacer(modifier = Modifier.height(4.dp)) }
+
+            // Redemption List or Empty State
+            if (displayedRedemptions.isEmpty() && !isLoading) {
+                item {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 48.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("📜", fontSize = 48.sp)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "Belum Ada Riwayat Hari Ini",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 15.sp,
+                                color = SlateDark
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Lakukan pemindaian tiket di tab Scan untuk memulai klaim diskon penumpang.",
+                                fontSize = 12.sp,
+                                color = SlateSubtle,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                }
+            } else {
                 items(displayedRedemptions) { item ->
                     RedemptionHistoryCard(
                         item = item,
@@ -1831,19 +1873,21 @@ fun AbsenTabContent(
 ) {
     var subTab by remember { mutableStateOf(0) } // 0: Riwayat Absensi, 1: Riwayat Koreksi
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+    SkyPullRefreshBox(
+        refreshing = isLoading,
+        onRefresh = onRefresh,
+        modifier = Modifier.fillMaxSize(),
+        indicatorColor = Color(0xFF005BAC)
     ) {
-        item { Spacer(modifier = Modifier.height(4.dp)) }
+        LazyColumn(
+            modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            item { Spacer(modifier = Modifier.height(4.dp)) }
 
-        item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
+            // Title Header (Clean without reload button)
+            item {
+                Column(modifier = Modifier.fillMaxWidth()) {
                     Text(
                         text = "Absensi & Kehadiran Kasir",
                         fontWeight = FontWeight.Bold,
@@ -1856,15 +1900,7 @@ fun AbsenTabContent(
                         color = SlateSubtle
                     )
                 }
-                OutlinedButton(
-                    onClick = onRefresh,
-                    modifier = Modifier.height(30.dp),
-                    enabled = !isLoading
-                ) {
-                    Text("🔄 Refresh", fontSize = 10.sp)
-                }
             }
-        }
 
         // GreatDay HR Style Attendance Card
         item {
@@ -1977,6 +2013,7 @@ fun AbsenTabContent(
         }
 
         item { Spacer(modifier = Modifier.height(20.dp)) }
+    }
     }
 }
 
