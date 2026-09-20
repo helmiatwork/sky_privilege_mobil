@@ -911,23 +911,17 @@ fun HomeTabContent(
         // Promo Banner Card (Exact User Mockup with Full-Bleed Airline Logo & Sparkle)
         item {
             Card(
-                shape = RoundedCornerShape(22.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+                shape = RoundedCornerShape(16.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF005BAC)),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(132.dp)
-                ) {
-                    // Full-Bleed Card Artwork from User Mockup
-                    Image(
-                        painter = painterResource(Res.drawable.card_promo_garuda),
-                        contentDescription = "Promo Maskapai SkyPrivilege",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.FillBounds
-                    )
-                }
+                Image(
+                    painter = painterResource(Res.drawable.card_promo_garuda),
+                    contentDescription = "Promo Maskapai SkyPrivilege",
+                    modifier = Modifier.fillMaxWidth(),
+                    contentScale = ContentScale.FillWidth
+                )
             }
         }
 
@@ -1352,9 +1346,9 @@ fun HistoryTabContent(
 @Composable
 fun RedemptionHistoryCard(item: RedemptionHistoryItem) {
     Card(
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
