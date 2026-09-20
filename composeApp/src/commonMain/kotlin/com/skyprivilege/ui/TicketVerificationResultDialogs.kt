@@ -135,21 +135,21 @@ fun TicketInvalidWarningDialog(
                             Spacer(modifier = Modifier.height(8.dp))
                             if (!redeemedAt.isNullOrBlank()) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text("🕒 Waktu", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF7F1D1D), modifier = Modifier.width(65.dp))
+                                    Text("🕒 Kapan", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF7F1D1D), modifier = Modifier.width(85.dp))
                                     Text(": $redeemedAt", fontSize = 11.sp, color = Color(0xFF1E293B), fontWeight = FontWeight.Medium)
                                 }
                                 Spacer(modifier = Modifier.height(4.dp))
                             }
                             if (!redeemedOutlet.isNullOrBlank()) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text("📍 Lokasi", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF7F1D1D), modifier = Modifier.width(65.dp))
+                                    Text("📍 Dimana", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF7F1D1D), modifier = Modifier.width(85.dp))
                                     Text(": $redeemedOutlet", fontSize = 11.sp, color = Color(0xFF1E293B), fontWeight = FontWeight.Medium)
                                 }
                                 Spacer(modifier = Modifier.height(4.dp))
                             }
                             if (!redeemedCashier.isNullOrBlank()) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text("👤 Petugas", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF7F1D1D), modifier = Modifier.width(65.dp))
+                                    Text("👤 Oleh Siapa", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF7F1D1D), modifier = Modifier.width(85.dp))
                                     Text(": $redeemedCashier", fontSize = 11.sp, color = Color(0xFF1E293B), fontWeight = FontWeight.Medium)
                                 }
                             }
