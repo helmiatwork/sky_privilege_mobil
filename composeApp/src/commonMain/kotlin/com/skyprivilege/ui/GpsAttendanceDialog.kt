@@ -25,6 +25,10 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -32,6 +36,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -57,36 +62,39 @@ fun GpsAttendanceDialog(
     val hasCheckIn = !checkInTime.isNullOrBlank() && checkInTime != "--:--"
     val hasCheckOut = !checkOutTime.isNullOrBlank() && checkOutTime != "--:--"
 
+    var showCheckoutWarningDialog by remember { mutableStateOf(false) }
+
     // Determine 1-button logic:
     // 1st press (empty): check_in
     // 2nd press (has check_in, empty check_out): check_out
-    // 3rd press (both exist): check_out (replaces end time)
+    // 3rd press (both exist): disabled (shift finished)
     val actionType = if (!hasCheckIn) "check_in" else "check_out"
     val actionTitle = when {
         !hasCheckIn -> "Catat Jam Masuk (Start Time)"
         !hasCheckOut -> "Catat Jam Pulang (End Time)"
-        else -> "Perbarui Jam Pulang (Replace End Time)"
+        else -> "Shift Selesai (Check-out Tercatat)"
     }
     val actionDescription = when {
         !hasCheckIn -> "Mencatat jam mulai shift kerja hari ini."
-        !hasCheckOut -> "Jam masuk: $checkInTime. Tekan untuk mencatat jam kepulangan."
-        else -> "Jam pulang saat ini: $checkOutTime. Tekan untuk memperbarui dengan jam terbaru."
+        !hasCheckOut -> "Jam masuk: $checkInTime. Tekan untuk mencatat jam kepulangan & mengakhiri shift."
+        else -> "Check-out telah tercatat pada $checkOutTime WIB. Shift kerja hari ini selesai."
     }
     val buttonText = when {
         !hasCheckIn -> "Catat Jam Masuk"
         !hasCheckOut -> "Catat Jam Pulang"
-        else -> "Perbarui Jam Pulang"
+        else -> "Shift Hari Ini Selesai"
     }
     val badgeBg = when {
         !hasCheckIn -> Color(0xFFDCFCE7)
         !hasCheckOut -> Color(0xFFFFEDD5)
-        else -> Color(0xFFFEF3C7)
+        else -> Color(0xFFE2E8F0)
     }
     val badgeColor = when {
         !hasCheckIn -> Color(0xFF15803D)
         !hasCheckOut -> Color(0xFFC2410C)
-        else -> Color(0xFFB45309)
+        else -> Color(0xFF64748B)
     }
+    val isButtonEnabled = !isSubmitting && !hasCheckOut
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -341,11 +349,19 @@ fun GpsAttendanceDialog(
 
                     Button(
                         onClick = {
-                            onSaveAttendance(actionType, latitude, longitude, accuracyMeters)
+                            if (actionType == "check_out") {
+                                showCheckoutWarningDialog = true
+                            } else {
+                                onSaveAttendance(actionType, latitude, longitude, accuracyMeters)
+                            }
                         },
                         modifier = Modifier.weight(1.8f),
-                        enabled = !isSubmitting,
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEA580C)),
+                        enabled = isButtonEnabled,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (hasCheckOut) Color(0xFF94A3B8) else Color(0xFFEA580C),
+                            disabledContainerColor = Color(0xFFCBD5E1),
+                            disabledContentColor = Color(0xFF64748B)
+                        ),
                         shape = RoundedCornerShape(10.dp)
                     ) {
                         if (isSubmitting) {
@@ -355,6 +371,89 @@ fun GpsAttendanceDialog(
                                 text = buttonText,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (showCheckoutWarningDialog) {
+        Dialog(
+            onDismissRequest = { if (!isSubmitting) showCheckoutWarningDialog = false },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth(0.9f)
+                    .clip(RoundedCornerShape(20.dp)),
+                color = Color.White,
+                shadowElevation = 16.dp
+            ) {
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(52.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFFFEF2F2)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("⚠️", fontSize = 26.sp)
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    Text(
+                        text = "Peringatan Akhiri Shift",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp,
+                        color = Color(0xFF0F172A)
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = "Jika Anda melakukan Check-out, shift hari ini akan diakhiri dan seluruh fungsi transaksi aplikasi SkyPrivilege TIDAK DAPAT DIGUNAKAN LAGI sampai hari berikutnya.\n\nApakah Anda yakin ingin mengakhiri shift sekarang?",
+                        fontSize = 12.sp,
+                        color = Color(0xFF475569),
+                        textAlign = TextAlign.Center,
+                        lineHeight = 18.sp
+                    )
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = { showCheckoutWarningDialog = false },
+                            modifier = Modifier.weight(1f),
+                            enabled = !isSubmitting,
+                            shape = RoundedCornerShape(10.dp)
+                        ) {
+                            Text("Batal", fontSize = 12.sp)
+                        }
+
+                        Button(
+                            onClick = {
+                                showCheckoutWarningDialog = false
+                                onSaveAttendance(actionType, latitude, longitude, accuracyMeters)
+                            },
+                            modifier = Modifier.weight(1.5f),
+                            enabled = !isSubmitting,
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626)),
+                            shape = RoundedCornerShape(10.dp)
+                        ) {
+                            Text(
+                                text = "Ya, Akhiri Shift",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
                             )
                         }
                     }
