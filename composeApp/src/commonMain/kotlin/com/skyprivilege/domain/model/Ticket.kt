@@ -17,3 +17,11 @@ data class Ticket(
     val canonicalHash: String? = null,
     val isValid: Boolean = true
 )
+
+class TicketVerificationException(
+    override val message: String,
+    val reasonCode: String? = null,
+    val redeemedAt: String? = null,
+    val redeemedOutlet: String? = null,
+    val redeemedCashier: String? = null
+) : Exception(message)

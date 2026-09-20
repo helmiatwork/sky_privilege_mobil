@@ -71,6 +71,7 @@ import com.skyprivilege.domain.model.RedemptionClaim
 import com.skyprivilege.domain.model.RedemptionHistoryItem
 import com.skyprivilege.domain.model.Ticket
 import com.skyprivilege.domain.model.TicketGuideline
+import com.skyprivilege.domain.model.TicketVerificationException
 import com.skyprivilege.data.remote.dto.CashierProfileDto
 import com.skyprivilege.data.repository.ProfileRepositoryImpl
 import com.skyprivilege.ui.components.FlatAbsenIcon
@@ -204,6 +205,9 @@ fun MainAppScreen(
     var showCameraScanDialog by remember { mutableStateOf(false) }
     var showTicketInvalidDialog by remember { mutableStateOf(false) }
     var ticketInvalidError by remember { mutableStateOf<String?>(null) }
+    var ticketInvalidRedeemedAt by remember { mutableStateOf<String?>(null) }
+    var ticketInvalidRedeemedOutlet by remember { mutableStateOf<String?>(null) }
+    var ticketInvalidRedeemedCashier by remember { mutableStateOf<String?>(null) }
     var showTicketValidDialog by remember { mutableStateOf(false) }
 
     // History data
@@ -684,7 +688,17 @@ fun MainAppScreen(
                             }.onFailure { err ->
                                 isVerifyingTicket = false
                                 showCameraScanDialog = false
-                                ticketInvalidError = err.message ?: "Tiket tidak valid atau melanggar aturan Anti-Fraud"
+                                if (err is TicketVerificationException) {
+                                    ticketInvalidError = err.message
+                                    ticketInvalidRedeemedAt = err.redeemedAt
+                                    ticketInvalidRedeemedOutlet = err.redeemedOutlet
+                                    ticketInvalidRedeemedCashier = err.redeemedCashier
+                                } else {
+                                    ticketInvalidError = err.message ?: "Tiket tidak valid atau melanggar aturan Anti-Fraud"
+                                    ticketInvalidRedeemedAt = null
+                                    ticketInvalidRedeemedOutlet = null
+                                    ticketInvalidRedeemedCashier = null
+                                }
                                 showTicketInvalidDialog = true
                             }
                         }
@@ -695,9 +709,15 @@ fun MainAppScreen(
             if (showTicketInvalidDialog && ticketInvalidError != null) {
                 TicketInvalidWarningDialog(
                     errorMessage = ticketInvalidError!!,
+                    redeemedAt = ticketInvalidRedeemedAt,
+                    redeemedOutlet = ticketInvalidRedeemedOutlet,
+                    redeemedCashier = ticketInvalidRedeemedCashier,
                     onDismiss = {
                         showTicketInvalidDialog = false
                         ticketInvalidError = null
+                        ticketInvalidRedeemedAt = null
+                        ticketInvalidRedeemedOutlet = null
+                        ticketInvalidRedeemedCashier = null
                         checklistConfirmed = false
                     }
                 )

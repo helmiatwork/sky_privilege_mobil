@@ -42,5 +42,9 @@ data class VerifyTicketResponse(
     val ticket: ParsedTicketDto? = null,
     val error: String? = null,
     val message: String? = null,
-    @SerialName("reason_code") val reasonCode: String? = null
+    @SerialName("reason_code") val reasonCode: String? = null,
+    @SerialName("redeemed_at") val redeemedAt: String? = null,
+    @SerialName("redeemed_at_formatted") val redeemedAtFormatted: String? = null,
+    @SerialName("redeemed_outlet") val redeemedOutlet: String? = null,
+    @SerialName("redeemed_cashier") val redeemedCashier: String? = null
 )
