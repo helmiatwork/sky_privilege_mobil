@@ -31,4 +31,9 @@ class TicketScanDefaultsTest {
         assertTrue(sample.isNotBlank())
         assertTrue(sample.contains("GA 00410"), "Sample barcode must contain Garuda GA 00410 flight number")
     }
+
+    @Test
+    fun testDemoAffordanceDefaultIsFalse() {
+        assertFalse(TicketScanDefaults.DEFAULT_SHOW_DEMO_AFFORDANCE)
+    }
 }

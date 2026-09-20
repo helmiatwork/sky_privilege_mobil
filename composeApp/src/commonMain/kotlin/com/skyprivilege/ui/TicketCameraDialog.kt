@@ -54,6 +54,7 @@ import androidx.compose.ui.window.DialogProperties
 
 object TicketScanDefaults {
     const val SAMPLE_DEMO_BARCODE = "M1SANTOSO/BUDI MR     EABC1234CGKDPSGA 00410263Y012A00042100"
+    const val DEFAULT_SHOW_DEMO_AFFORDANCE = false
 
     fun canSubmitBarcode(barcode: String?, isVerifying: Boolean): Boolean {
         return !isVerifying && !barcode.isNullOrBlank()
@@ -66,6 +67,7 @@ fun TicketCameraDialog(
     outletName: String = "Sky Lounge Terminal 3 CGK",
     isVerifying: Boolean = false,
     errorMessage: String? = null,
+    showDemoAffordance: Boolean = TicketScanDefaults.DEFAULT_SHOW_DEMO_AFFORDANCE,
     onDismiss: () -> Unit,
     onSubmitTicket: (barcodeData: String?, imageBase64: String?) -> Unit
 ) {
@@ -249,24 +251,26 @@ fun TicketCameraDialog(
                     }
                 }
 
-                // Tombol Sampel Eksplisit untuk Mode Demo / Testing tanpa scanner barcode fisik
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 4.dp),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    Text(
-                        text = "🧪 Isi Sampel Demo (Garuda GA410)",
-                        fontSize = 11.sp,
-                        color = Color(0xFF0284C7),
-                        fontWeight = FontWeight.Medium,
+                if (showDemoAffordance) {
+                    // Tombol Sampel Eksplisit untuk Mode Demo / Testing tanpa scanner barcode fisik
+                    Row(
                         modifier = Modifier
-                            .clickable {
-                                scannedBarcode = TicketScanDefaults.SAMPLE_DEMO_BARCODE
-                            }
-                            .padding(vertical = 4.dp, horizontal = 2.dp)
-                    )
+                            .fillMaxWidth()
+                            .padding(top = 4.dp),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        Text(
+                            text = "🧪 Isi Sampel Demo (Garuda GA410)",
+                            fontSize = 11.sp,
+                            color = Color(0xFF0284C7),
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier
+                                .clickable {
+                                    scannedBarcode = TicketScanDefaults.SAMPLE_DEMO_BARCODE
+                                }
+                                .padding(vertical = 4.dp, horizontal = 2.dp)
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(4.dp))
