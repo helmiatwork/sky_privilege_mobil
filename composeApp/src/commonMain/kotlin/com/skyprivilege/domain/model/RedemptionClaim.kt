@@ -23,5 +23,6 @@ data class RedemptionClaim(
     val status: ClaimStatus = ClaimStatus.PENDING,
     val trustScore: Float = 0.0f,
     val timestampEpochMs: Long = 0L,
-    val ticketPhoto: String? = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+    val ticketPhoto: String? = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+    val ticketPhotoData: String? = null
 )

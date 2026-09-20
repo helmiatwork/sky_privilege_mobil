@@ -11,7 +11,8 @@ data class ClaimDiscountRequest(
     @SerialName("outlet_id") val outletId: Long,
     @SerialName("cashier_id") val cashierId: Long,
     @SerialName("amount_cents") val amountCents: Long,
-    val signals: LocationContext
+    val signals: LocationContext,
+    @SerialName("ticket_photo_data") val ticketPhotoData: String? = null
 )
 
 @Serializable

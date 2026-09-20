@@ -278,7 +278,7 @@ fun TicketCameraDialog(
                     Button(
                         onClick = {
                             if (scannedBarcode.isNotBlank()) {
-                                onSubmitTicket(scannedBarcode.trim(), null)
+                                onSubmitTicket(scannedBarcode.trim(), TicketPhotoDefaults.DEFAULT_BOARDING_PASS_PHOTO_DATA_URI)
                             }
                         },
                         modifier = Modifier.weight(1.8f),
@@ -291,10 +291,10 @@ fun TicketCameraDialog(
                         if (isVerifying) {
                             CircularProgressIndicator(modifier = Modifier.size(16.dp), color = Color.White)
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Memeriksa...", fontSize = 12.sp)
+                            Text("Memproses...", fontSize = 12.sp)
                         } else {
                             Text(
-                                text = "📷 Pindai & Periksa Tiket",
+                                text = "📷 Ambil Foto Boarding Pass",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold
                             )

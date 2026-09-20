@@ -166,4 +166,94 @@ class RedemptionRepositoryTest {
         assertEquals(25000.0, item.discountAmount)
         assertEquals("15:43 WIB", item.timeFormatted)
     }
+
+    @Test
+    fun testRequestClaimTokenIncludesTicketPhotoDataInRequestBody() = runTest {
+        val mockEngine = MockEngine { request ->
+            assertEquals("/api/v1/redemptions/claim", request.url.encodedPath)
+            val content = request.body as? io.ktor.http.content.OutgoingContent.ByteArrayContent
+            val bodyString = content?.bytes()?.decodeToString().orEmpty()
+            assertTrue(bodyString.contains("ticket_photo_data"))
+            assertTrue(bodyString.contains("data:image/jpeg;base64,claim_photo_123"))
+            respond(
+                content = """
+                    {
+                        "success": true,
+                        "claim_token": "token_abc_123",
+                        "expires_in": 120
+                    }
+                """.trimIndent(),
+                status = HttpStatusCode.OK,
+                headers = headersOf(HttpHeaders.ContentType, "application/json")
+            )
+        }
+
+        val client = HttpClient(mockEngine) {
+            install(ContentNegotiation) {
+                json(Json { ignoreUnknownKeys = true })
+            }
+        }
+
+        val repository = RedemptionRepositoryImpl(client)
+        val result = repository.requestClaimToken(
+            orderId = "ORD-123",
+            pnrHash = "hash123",
+            outletId = 1L,
+            cashierId = 2L,
+            amountCents = 2500000L,
+            signals = com.skyprivilege.domain.model.LocationContext(
+                gps = com.skyprivilege.domain.model.GpsCoordinate(latitude = -6.12, longitude = 106.65, accuracyMeters = 10f, isMock = false),
+                wifi = com.skyprivilege.domain.model.WifiContext(bssid = "00:11:22:33:44:55", ssid = "TestWiFi", rssiDbm = -50),
+                deviceIntegrity = com.skyprivilege.domain.model.DeviceIntegrityContext(deviceRecognition = "MEETS_BASIC_INTEGRITY", isRooted = false, isEmulator = false)
+            ),
+            ticketPhotoData = "data:image/jpeg;base64,claim_photo_123"
+        )
+
+        assertTrue(result.isSuccess)
+        assertEquals("token_abc_123", result.getOrNull())
+    }
+
+    @Test
+    fun testSubmitRedemptionIncludesTicketPhotoDataInRequestBody() = runTest {
+        val mockEngine = MockEngine { request ->
+            assertEquals("/api/v1/redemptions", request.url.encodedPath)
+            val content = request.body as? io.ktor.http.content.OutgoingContent.ByteArrayContent
+            val bodyString = content?.bytes()?.decodeToString().orEmpty()
+            assertTrue(bodyString.contains("ticket_photo_data"))
+            assertTrue(bodyString.contains("data:image/jpeg;base64,submit_photo_456"))
+            respond(
+                content = """
+                    {
+                        "success": true,
+                        "redemption_id": 888
+                    }
+                """.trimIndent(),
+                status = HttpStatusCode.OK,
+                headers = headersOf(HttpHeaders.ContentType, "application/json")
+            )
+        }
+
+        val client = HttpClient(mockEngine) {
+            install(ContentNegotiation) {
+                json(Json { ignoreUnknownKeys = true })
+            }
+        }
+
+        val repository = RedemptionRepositoryImpl(client)
+        val claim = RedemptionClaim(
+            ticket = sampleTicket,
+            orderId = "MOKA-1002",
+            outletId = 1L,
+            cashierId = 2L,
+            amountCents = 5000000L,
+            claimToken = "valid_token_xyz",
+            shiftId = 42L,
+            status = ClaimStatus.PENDING,
+            ticketPhotoData = "data:image/jpeg;base64,submit_photo_456"
+        )
+
+        val result = repository.submitRedemption(claim)
+        assertTrue(result.isSuccess)
+        assertEquals("888", result.getOrNull())
+    }
 }

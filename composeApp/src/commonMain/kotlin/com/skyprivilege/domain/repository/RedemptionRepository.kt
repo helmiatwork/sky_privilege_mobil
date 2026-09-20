@@ -14,7 +14,8 @@ interface RedemptionRepository {
         outletId: Long,
         cashierId: Long,
         amountCents: Long,
-        signals: LocationContext
+        signals: LocationContext,
+        ticketPhotoData: String? = null
     ): Result<String>
 
     suspend fun submitRedemption(claim: RedemptionClaim): Result<String>
