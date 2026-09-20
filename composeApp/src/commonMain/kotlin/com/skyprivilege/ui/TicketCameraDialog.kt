@@ -230,24 +230,40 @@ fun TicketCameraDialog(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Clean Barcode / Scan Field
-                OutlinedTextField(
-                    value = scannedBarcode,
-                    onValueChange = { scannedBarcode = it },
-                    label = { Text("Barcode Boarding Pass (Otomatis Terdeteksi)", fontSize = 11.sp) },
-                    placeholder = { Text("Arahkan kamera atau masukkan string BCBP...") },
-                    singleLine = true,
-                    textStyle = androidx.compose.ui.text.TextStyle(
-                        fontSize = 11.sp,
-                        fontFamily = FontFamily.Monospace
-                    ),
+                // Read-Only Barcode Display (Sensor Optik Kamera)
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = Color(0xFFF8FAFC),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFCBD5E1)),
                     modifier = Modifier.fillMaxWidth()
-                )
+                ) {
+                    Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("🔍", fontSize = 11.sp)
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Barcode Terdeteksi Otomatis (Read-Only):",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF334155)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = scannedBarcode.ifBlank { "Mengarahkan sensor optik ke barcode boarding pass..." },
+                            fontSize = 11.sp,
+                            fontFamily = FontFamily.Monospace,
+                            color = if (scannedBarcode.isNotBlank()) Color(0xFF0F172A) else Color(0xFF94A3B8),
+                            fontWeight = if (scannedBarcode.isNotBlank()) FontWeight.SemiBold else FontWeight.Normal,
+                            maxLines = 2
+                        )
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(6.dp))
 
                 Text(
-                    text = "Arahkan kamera ke tiket fisik/digital. Anti-Fraud Engine backend otomatis memvalidasi keabsahan tiket.",
+                    text = "Arahkan kamera ke tiket fisik/digital. Anti-Fraud Engine backend otomatis memvalidasi keabsahan tiket via AI.",
                     fontSize = 10.sp,
                     color = Color(0xFF64748B),
                     lineHeight = 14.sp

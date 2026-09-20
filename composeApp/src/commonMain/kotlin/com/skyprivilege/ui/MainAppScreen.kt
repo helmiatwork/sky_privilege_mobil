@@ -1723,7 +1723,7 @@ fun ScanTabContent(
             }
         }
 
-        // Camera & Barcode Input Card
+        // Camera Scanner Card
         item {
             Card(
                 shape = RoundedCornerShape(14.dp),
@@ -1733,49 +1733,65 @@ fun ScanTabContent(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "Input Barcode Boarding Pass (IATA BCBP)",
+                        text = "Pemindai Kamera Boarding Pass",
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp,
                         color = SlateDark
                     )
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Verifikasi keaslian fisik tiket, barcode IATA BCBP, dan stempel via Vision AI",
+                        fontSize = 11.sp,
+                        color = Color(0xFF64748B)
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
 
                     // Dedicated Camera Button
                     Button(
                         onClick = onOpenCamera,
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF005BAC)),
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
                         shape = RoundedCornerShape(10.dp)
                     ) {
-                        Text("📷 Buka Kamera & Foto Tiket", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        Text(
+                            text = "📷 Buka Kamera & Foto Tiket",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
                     }
 
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
-                    OutlinedTextField(
-                        value = barcodeInput,
-                        onValueChange = onBarcodeInputChanged,
-                        label = { Text("Raw Barcode / BCBP String") },
-                        placeholder = { Text("M1SANTOSO/BUDI MR...") },
-                        modifier = Modifier.fillMaxWidth(),
-                        textStyle = androidx.compose.ui.text.TextStyle(
-                            fontSize = 12.sp,
-                            fontFamily = FontFamily.Monospace
-                        )
-                    )
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    Button(
-                        onClick = onVerifyTicket,
-                        enabled = !isVerifying && barcodeInput.isNotBlank(),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
+                    // Anti-Fraud Policy Card (Immutable / Read-Only Notice)
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = Color(0xFFF1F5F9),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0)),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        if (isVerifying) {
-                            CircularProgressIndicator(modifier = Modifier.size(16.dp), color = Color.White)
-                        } else {
-                            Text("Verifikasi Tiket ke Anti-Fraud Engine", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text("🛡️", fontSize = 12.sp)
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "Kebijakan Anti-Fraud Vision AI:",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF334155)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                text = "• Input manual dinonaktifkan demi integritas audit & kepatuhan SOP.\n" +
+                                       "• Tiket fisik/digital wajib dipindai langsung melalui sensor kamera.\n" +
+                                       "• Vision AI otomatis memverifikasi keabsahan boarding pass & stempel outlet.",
+                                fontSize = 10.sp,
+                                color = Color(0xFF475569),
+                                lineHeight = 14.sp
+                            )
                         }
                     }
 
