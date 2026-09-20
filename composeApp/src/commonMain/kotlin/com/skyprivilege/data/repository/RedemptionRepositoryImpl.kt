@@ -33,7 +33,8 @@ data class SubmitRedemptionRequest(
     @SerialName("passenger_name") val passengerName: String? = null,
     @SerialName("raw_pnr") val rawPnr: String? = null,
     @SerialName("shift_id") val shiftId: Long? = null,
-    @SerialName("ticket_photo") val ticketPhoto: String? = null
+    @SerialName("ticket_photo") val ticketPhoto: String? = null,
+    @SerialName("ticket_photo_data") val ticketPhotoData: String? = null
 )
 
 @Serializable
@@ -68,7 +69,8 @@ class RedemptionRepositoryImpl(
         outletId: Long,
         cashierId: Long,
         amountCents: Long,
-        signals: LocationContext
+        signals: LocationContext,
+        ticketPhotoData: String?
     ): Result<String> {
         return runCatching {
             val response = httpClient.post("/api/v1/redemptions/claim") {
@@ -80,7 +82,8 @@ class RedemptionRepositoryImpl(
                         outletId = outletId,
                         cashierId = cashierId,
                         amountCents = amountCents,
-                        signals = signals
+                        signals = signals,
+                        ticketPhotoData = ticketPhotoData
                     )
                 )
             }.body<ClaimDiscountResponse>()
@@ -110,7 +113,8 @@ class RedemptionRepositoryImpl(
                         passengerName = claim.ticket.passengerName,
                         rawPnr = claim.ticket.pnr,
                         shiftId = claim.shiftId,
-                        ticketPhoto = claim.ticketPhoto
+                        ticketPhoto = claim.ticketPhoto,
+                        ticketPhotoData = claim.ticketPhotoData ?: claim.ticketPhoto
                     )
                 )
             }

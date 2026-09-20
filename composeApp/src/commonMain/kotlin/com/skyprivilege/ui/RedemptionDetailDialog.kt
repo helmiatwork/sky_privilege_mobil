@@ -1,7 +1,9 @@
 package com.skyprivilege.ui
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,11 +26,13 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -122,194 +126,252 @@ fun RedemptionDetailDialog(
 
                 Spacer(modifier = Modifier.height(6.dp))
 
-                Card(
-                    shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFFDF7)),
-                    border = BorderStroke(1.5.dp, Color(0xFFE2E8F0)),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(modifier = Modifier.padding(14.dp)) {
-                        // Ticket Top Header (Airline Bar)
-                        Row(
+                val photoBitmap = remember(item.ticketPhotoUrl) {
+                    item.ticketPhotoUrl?.let { decodeBase64ToBitmap(it) }
+                }
+
+                if (photoBitmap != null) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .border(1.dp, Color(0xFFCBD5E1), RoundedCornerShape(12.dp))
+                            .background(Color(0xFF0F172A)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Image(
+                            bitmap = photoBitmap,
+                            contentDescription = "Foto Fisik Tiket",
+                            contentScale = ContentScale.FillWidth,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(Color(0xFF005BAC))
-                                .padding(horizontal = 10.dp, vertical = 6.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "✈️ $resolvedAirlineName",
-                                color = Color.White,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                text = "BOARDING PASS",
-                                color = Color(0xFFBAE6FD),
-                                fontSize = 9.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
+                                .clip(RoundedCornerShape(12.dp))
+                        )
 
-                        Spacer(modifier = Modifier.height(10.dp))
-
-                        // Passenger & Route
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = "NAMA PENUMPANG",
-                                    fontSize = 9.sp,
-                                    color = Color(0xFF64748B),
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                                Text(
-                                    text = item.passengerName.ifBlank { "SANTOSO/BUDI MR" },
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF0F172A)
-                                )
-                            }
-                            Column(horizontalAlignment = Alignment.End) {
-                                Text(
-                                    text = "RUTE",
-                                    fontSize = 9.sp,
-                                    color = Color(0xFF64748B),
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                                Text(
-                                    text = "CGK ➔ DPS",
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF005BAC)
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        // Flight, Date, Seat
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Column {
-                                Text(
-                                    text = "PENERBANGAN",
-                                    fontSize = 9.sp,
-                                    color = Color(0xFF64748B),
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                                Text(
-                                    text = item.flightNumber,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF1E293B)
-                                )
-                            }
-                            Column {
-                                Text(
-                                    text = "TANGGAL",
-                                    fontSize = 9.sp,
-                                    color = Color(0xFF64748B),
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                                Text(
-                                    text = item.flightDate.ifBlank { item.dateFormatted },
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF1E293B)
-                                )
-                            }
-                            Column(horizontalAlignment = Alignment.End) {
-                                Text(
-                                    text = "KURSI / KELAS",
-                                    fontSize = 9.sp,
-                                    color = Color(0xFF64748B),
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                                Text(
-                                    text = "12A · Y (Economy)",
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF1E293B)
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(10.dp))
-
-                        // Simulated Barcode Box with Stamp Overlay
+                        // Top Badge: 📷 FOTO FISIK TIKET (GEOFENCE AUDITED)
                         Box(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .height(56.dp)
+                                .align(Alignment.TopStart)
+                                .padding(8.dp)
                                 .clip(RoundedCornerShape(6.dp))
-                                .background(Color(0xFFF1F5F9))
-                                .padding(horizontal = 8.dp, vertical = 4.dp),
-                            contentAlignment = Alignment.Center
+                                .background(Color(0xD90F172A))
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
                         ) {
-                            // Barcode pattern representation
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceEvenly,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                repeat(32) { i ->
-                                    Box(
-                                        modifier = Modifier
-                                            .width(if (i % 3 == 0) 3.dp else 1.5.dp)
-                                            .height(36.dp)
-                                            .background(Color(0xFF334155))
-                                    )
-                                }
-                            }
-
-                            // Watermark / Official Stamp "CLAIMED - SKYPRIVILEGE"
-                            Box(
-                                modifier = Modifier
-                                    .rotate(-4f)
-                                    .background(Color(0xEEFFFFFF))
-                                    .padding(horizontal = 8.dp, vertical = 2.dp)
-                            ) {
-                                Surface(
-                                    shape = RoundedCornerShape(4.dp),
-                                    border = BorderStroke(1.dp, Color(0xFF16A34A)),
-                                    color = Color(0xFFDCFCE7)
-                                ) {
-                                    Text(
-                                        text = "✓ CLAIMED · SKYPRIVILEGE",
-                                        color = Color(0xFF15803D),
-                                        fontSize = 10.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                    )
-                                }
-                            }
+                            Text(
+                                text = "📷 FOTO FISIK TIKET (GEOFENCE AUDITED)",
+                                color = Color(0xFF38BDF8),
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
 
-                        Spacer(modifier = Modifier.height(6.dp))
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
+                        // Official outlet stamp overlay
+                        Box(
+                            modifier = Modifier
+                                .rotate(-4f)
+                                .background(Color(0xEEFFFFFF), RoundedCornerShape(6.dp))
+                                .border(1.5.dp, Color(0xFF16A34A), RoundedCornerShape(6.dp))
+                                .padding(horizontal = 10.dp, vertical = 5.dp)
                         ) {
                             Text(
-                                text = "PNR: ${item.pnrMasked}",
-                                fontSize = 10.sp,
-                                fontFamily = FontFamily.Monospace,
-                                color = Color(0xFF64748B)
-                            )
-                            Text(
-                                text = "IATA BCBP M1 VERIFIED",
-                                fontSize = 9.sp,
+                                text = "✓ CLAIMED · SKYPRIVILEGE · OUTLET VALIDATED",
+                                color = Color(0xFF15803D),
+                                fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF15803D)
+                                letterSpacing = 0.5.sp
                             )
+                        }
+                    }
+                } else {
+                    Card(
+                        shape = RoundedCornerShape(14.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFFDF7)),
+                        border = BorderStroke(1.5.dp, Color(0xFFE2E8F0)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(14.dp)) {
+                            // Ticket Top Header (Airline Bar)
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(Color(0xFF005BAC))
+                                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "✈️ $resolvedAirlineName",
+                                    color = Color.White,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "BOARDING PASS",
+                                    color = Color(0xFFBAE6FD),
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            // Passenger & Route
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "NAMA PENUMPANG",
+                                        fontSize = 9.sp,
+                                        color = Color(0xFF64748B),
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                    Text(
+                                        text = item.passengerName.ifBlank { "SANTOSO/BUDI MR" },
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF0F172A)
+                                    )
+                                }
+                                Column(horizontalAlignment = Alignment.End) {
+                                    Text(
+                                        text = "RUTE",
+                                        fontSize = 9.sp,
+                                        color = Color(0xFF64748B),
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                    Text(
+                                        text = "CGK ➔ DPS",
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF005BAC)
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            // Flight, Date, Seat
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column {
+                                    Text(
+                                        text = "PENERBANGAN",
+                                        fontSize = 9.sp,
+                                        color = Color(0xFF64748B),
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                    Text(
+                                        text = item.flightNumber,
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF1E293B)
+                                    )
+                                }
+                                Column {
+                                    Text(
+                                        text = "TANGGAL",
+                                        fontSize = 9.sp,
+                                        color = Color(0xFF64748B),
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                    Text(
+                                        text = item.flightDate.ifBlank { item.dateFormatted },
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF1E293B)
+                                    )
+                                }
+                                Column(horizontalAlignment = Alignment.End) {
+                                    Text(
+                                        text = "KURSI / KELAS",
+                                        fontSize = 9.sp,
+                                        color = Color(0xFF64748B),
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                    Text(
+                                        text = "12A · Y (Economy)",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF1E293B)
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            // Simulated Barcode Box with Stamp Overlay
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(56.dp)
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(Color(0xFFF1F5F9))
+                                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                // Barcode pattern representation
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceEvenly,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    repeat(32) { i ->
+                                        Box(
+                                            modifier = Modifier
+                                                .width(if (i % 3 == 0) 3.dp else 1.5.dp)
+                                                .height(36.dp)
+                                                .background(Color(0xFF334155))
+                                        )
+                                    }
+                                }
+
+                                // Watermark / Official Stamp "CLAIMED - SKYPRIVILEGE"
+                                Box(
+                                    modifier = Modifier
+                                        .rotate(-4f)
+                                        .background(Color(0xEEFFFFFF))
+                                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                                ) {
+                                    Surface(
+                                        shape = RoundedCornerShape(4.dp),
+                                        border = BorderStroke(1.dp, Color(0xFF16A34A)),
+                                        color = Color(0xFFDCFCE7)
+                                    ) {
+                                        Text(
+                                            text = "✓ CLAIMED · SKYPRIVILEGE · OUTLET VALIDATED",
+                                            color = Color(0xFF15803D),
+                                            fontSize = 9.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                        )
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(6.dp))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = "PNR: ${item.pnrMasked}",
+                                    fontSize = 10.sp,
+                                    fontFamily = FontFamily.Monospace,
+                                    color = Color(0xFF64748B)
+                                )
+                                Text(
+                                    text = "IATA BCBP M1 VERIFIED",
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF15803D)
+                                )
+                            }
                         }
                     }
                 }

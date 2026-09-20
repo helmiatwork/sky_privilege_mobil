@@ -17,7 +17,6 @@
 
     <application
         android:allowBackup="false"
-        android:icon="@android:drawable/sym_def_app_icon"
         android:label="SkyPrivilege Scanner"
         android:supportsRtl="true"
         android:usesCleartextTraffic="true"

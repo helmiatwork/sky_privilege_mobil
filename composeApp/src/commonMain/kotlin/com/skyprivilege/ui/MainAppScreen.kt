@@ -209,6 +209,7 @@ fun MainAppScreen(
     var ticketInvalidRedeemedOutlet by remember { mutableStateOf<String?>(null) }
     var ticketInvalidRedeemedCashier by remember { mutableStateOf<String?>(null) }
     var showTicketValidDialog by remember { mutableStateOf(false) }
+    var capturedPhotoBase64 by remember { mutableStateOf<String?>(null) }
 
     // History data
     var redemptionHistoryList by remember { mutableStateOf<List<RedemptionHistoryItem>>(emptyList()) }
@@ -555,9 +556,11 @@ fun MainAppScreen(
                     errorMessage = globalError,
                     onDismiss = {
                         showCameraScanDialog = false
+                        capturedPhotoBase64 = null
                         currentTab = AppTab.HOME
                     },
                     onSubmitTicket = { barcodeData, imageBase64 ->
+                        capturedPhotoBase64 = imageBase64
                         isVerifyingTicket = true
                         globalError = null
                         coroutineScope.launch {
@@ -584,6 +587,7 @@ fun MainAppScreen(
                             }.onFailure { err ->
                                 isVerifyingTicket = false
                                 showCameraScanDialog = false
+                                capturedPhotoBase64 = null
                                 if (err is TicketVerificationException) {
                                     ticketInvalidError = err.message
                                     ticketInvalidRedeemedAt = err.redeemedAt
@@ -615,6 +619,7 @@ fun MainAppScreen(
                         ticketInvalidRedeemedOutlet = null
                         ticketInvalidRedeemedCashier = null
                         checklistConfirmed = false
+                        capturedPhotoBase64 = null
                         currentTab = AppTab.HOME
                     }
                 )
@@ -628,6 +633,7 @@ fun MainAppScreen(
                     redemptionSuccessMsg = redemptionSuccessMsg,
                     onDismiss = {
                         showTicketValidDialog = false
+                        capturedPhotoBase64 = null
                         currentTab = AppTab.HOME
                         if (redemptionSuccessMsg != null) {
                             checklistConfirmed = false
@@ -638,6 +644,7 @@ fun MainAppScreen(
                     },
                     onApplyToMoka = {
                         val t = verifiedTicket!!
+                        val photoToSend = capturedPhotoBase64
                         isClaimingDiscount = true
                         coroutineScope.launch {
                             val orderId = "ORD-" + (System.currentTimeMillis() % 100000)
@@ -649,6 +656,7 @@ fun MainAppScreen(
                                 outletId = outletId,
                                 cashierId = cashierId,
                                 amountCents = amountCents,
+                                ticketPhotoData = photoToSend,
                                 signals = com.skyprivilege.domain.model.LocationContext(
                                     gps = com.skyprivilege.domain.model.GpsCoordinate(
                                         latitude = -6.1256,
@@ -677,10 +685,13 @@ fun MainAppScreen(
                                         cashierId = cashierId,
                                         amountCents = amountCents,
                                         claimToken = token,
-                                        shiftId = activeShiftId
+                                        shiftId = activeShiftId,
+                                        ticketPhotoData = photoToSend
                                     )
                                 ).onSuccess { redId ->
                                     isClaimingDiscount = false
+                                    // ZERO-DISK: clear in-memory photo buffer immediately after transmission
+                                    capturedPhotoBase64 = null
                                     redemptionSuccessMsg = "Klaim Berhasil! ID Transaksi: #$redId (Diskon Rp 25.000 sukses diinjeksi ke Moka POS Order: $orderId)"
                                     refreshRedemptions()
                                 }.onFailure { claimErr ->
