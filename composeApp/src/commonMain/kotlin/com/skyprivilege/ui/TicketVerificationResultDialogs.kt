@@ -92,33 +92,8 @@ fun TicketInvalidWarningDialog(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Error Details Card
-                Card(
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF1F2)),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFECDD3)),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(modifier = Modifier.padding(14.dp)) {
-                        Text(
-                            text = "❌ Alasan Penolakan:",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFFBE123C)
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = errorMessage,
-                            fontSize = 12.sp,
-                            color = Color(0xFF881337),
-                            lineHeight = 16.sp
-                        )
-                    }
-                }
-
                 val hasRedemptionHistory = !redeemedAt.isNullOrBlank() || !redeemedOutlet.isNullOrBlank() || !redeemedCashier.isNullOrBlank()
                 if (hasRedemptionHistory) {
-                    Spacer(modifier = Modifier.height(10.dp))
                     Card(
                         shape = RoundedCornerShape(12.dp),
                         colors = CardDefaults.cardColors(containerColor = Color(0xFFFEF2F2)),
@@ -126,33 +101,67 @@ fun TicketInvalidWarningDialog(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(modifier = Modifier.padding(14.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text("❌", fontSize = 13.sp)
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "Tiket Sudah Pernah Digunakan",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF991B1B)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "📋 Riwayat Penggunaan Sebelumnya:",
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF991B1B)
+                                text = "Klaim ditolak karena tiket telah terdaftar di database:",
+                                fontSize = 11.sp,
+                                color = Color(0xFF7F1D1D)
                             )
-                            Spacer(modifier = Modifier.height(8.dp))
+                            Spacer(modifier = Modifier.height(10.dp))
                             if (!redeemedAt.isNullOrBlank()) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text("🕒 Kapan", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF7F1D1D), modifier = Modifier.width(85.dp))
-                                    Text(": $redeemedAt", fontSize = 11.sp, color = Color(0xFF1E293B), fontWeight = FontWeight.Medium)
+                                    Text(": $redeemedAt", fontSize = 11.sp, color = Color(0xFF1E293B), fontWeight = FontWeight.SemiBold)
                                 }
-                                Spacer(modifier = Modifier.height(4.dp))
+                                Spacer(modifier = Modifier.height(5.dp))
                             }
                             if (!redeemedOutlet.isNullOrBlank()) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text("📍 Dimana", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF7F1D1D), modifier = Modifier.width(85.dp))
-                                    Text(": $redeemedOutlet", fontSize = 11.sp, color = Color(0xFF1E293B), fontWeight = FontWeight.Medium)
+                                    Text(": $redeemedOutlet", fontSize = 11.sp, color = Color(0xFF1E293B), fontWeight = FontWeight.SemiBold)
                                 }
-                                Spacer(modifier = Modifier.height(4.dp))
+                                Spacer(modifier = Modifier.height(5.dp))
                             }
                             if (!redeemedCashier.isNullOrBlank()) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text("👤 Oleh Siapa", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF7F1D1D), modifier = Modifier.width(85.dp))
-                                    Text(": $redeemedCashier", fontSize = 11.sp, color = Color(0xFF1E293B), fontWeight = FontWeight.Medium)
+                                    Text(": $redeemedCashier", fontSize = 11.sp, color = Color(0xFF1E293B), fontWeight = FontWeight.SemiBold)
                                 }
                             }
+                        }
+                    }
+                } else {
+                    // Error Details Card for generic/format/date errors
+                    Card(
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF1F2)),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFECDD3)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(14.dp)) {
+                            Text(
+                                text = "❌ Alasan Penolakan:",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFFBE123C)
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = errorMessage,
+                                fontSize = 12.sp,
+                                color = Color(0xFF881337),
+                                lineHeight = 16.sp
+                            )
                         }
                     }
                 }
