@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -34,6 +35,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 
 @Composable
 fun GpsAttendanceDialog(
@@ -86,13 +88,16 @@ fun GpsAttendanceDialog(
         else -> Color(0xFFB45309)
     }
 
-    Dialog(onDismissRequest = onDismiss) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
         Surface(
             shape = RoundedCornerShape(20.dp),
             color = Color.White,
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(4.dp)
+                .fillMaxWidth(0.92f)
+                .wrapContentHeight()
         ) {
             Column(
                 modifier = Modifier
@@ -227,14 +232,32 @@ fun GpsAttendanceDialog(
                     border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Text(
-                            text = cashierName,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 13.sp,
-                            color = Color(0xFF1E293B)
-                        )
-                        Spacer(modifier = Modifier.height(2.dp))
+                    Column(modifier = Modifier.padding(14.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = cashierName,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.sp,
+                                color = Color(0xFF1E293B)
+                            )
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = Color(0xFFF1F5F9)
+                            ) {
+                                Text(
+                                    text = currentDateText,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = Color(0xFF475569),
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -242,23 +265,17 @@ fun GpsAttendanceDialog(
                         ) {
                             Text(
                                 text = currentTimeText,
-                                fontSize = 20.sp,
+                                fontSize = 22.sp,
                                 fontWeight = FontWeight.ExtraBold,
                                 color = Color(0xFFEA580C)
                             )
                             Text(
-                                text = currentDateText,
-                                fontSize = 11.sp,
-                                color = Color(0xFF64748B)
+                                text = "IP: $clientIp • Device: $deviceId",
+                                fontSize = 10.sp,
+                                color = Color(0xFF94A3B8),
+                                fontFamily = FontFamily.Monospace
                             )
                         }
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "IP: $clientIp • Device: $deviceId",
-                            fontSize = 10.sp,
-                            color = Color(0xFF94A3B8),
-                            fontFamily = FontFamily.Monospace
-                        )
                     }
                 }
 

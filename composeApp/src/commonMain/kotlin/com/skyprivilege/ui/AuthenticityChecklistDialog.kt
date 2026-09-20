@@ -37,6 +37,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.skyprivilege.domain.model.TicketGuideline
 
 object AuthenticityChecklistValidator {
@@ -55,21 +56,27 @@ fun AuthenticityChecklistDialog(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit
 ) {
-    val checkedMap = remember(guidelines) {
-        mutableStateMapOf<Long, Boolean>().apply {
-            guidelines.forEach { put(it.id, false) }
-        }
+    val checkedMap = remember {
+        mutableStateMapOf<Long, Boolean>()
+    }
+
+    androidx.compose.runtime.LaunchedEffect(guidelines) {
+        checkedMap.clear()
+        guidelines.forEach { checkedMap[it.id] = false }
     }
     val isAllChecked = AuthenticityChecklistValidator.isAllChecked(guidelines, checkedMap)
 
-    Dialog(onDismissRequest = { if (!isSubmitting) onDismiss() }) {
+    Dialog(
+        onDismissRequest = { if (!isSubmitting) onDismiss() },
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
         Surface(
             shape = RoundedCornerShape(20.dp),
             color = MaterialTheme.colorScheme.surface,
             tonalElevation = 8.dp,
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp)
+                .fillMaxWidth(0.92f)
+                .padding(horizontal = 4.dp)
         ) {
             Column(
                 modifier = Modifier
@@ -234,7 +241,7 @@ fun AuthenticityChecklistDialog(
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(text = "Merekam...", fontSize = 11.sp)
                         } else {
-                            Text(text = "Saya Konfirmasi Tiket Asli (Yes)", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            Text(text = "Konfirmasi Manual & Lanjut ke Kamera", fontSize = 11.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
