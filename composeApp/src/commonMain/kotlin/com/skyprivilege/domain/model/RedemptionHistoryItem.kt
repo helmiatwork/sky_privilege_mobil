@@ -14,5 +14,6 @@ data class RedemptionHistoryItem(
     val status: String = "approved",
     @SerialName("is_overridden") val isOverridden: Boolean = false,
     @SerialName("time_formatted") val timeFormatted: String = "",
-    @SerialName("date_formatted") val dateFormatted: String = ""
+    @SerialName("date_formatted") val dateFormatted: String = "",
+    @SerialName("is_today") val isToday: Boolean = false
 )

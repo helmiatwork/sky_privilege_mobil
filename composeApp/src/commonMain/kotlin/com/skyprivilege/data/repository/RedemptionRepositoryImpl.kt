@@ -154,10 +154,13 @@ class RedemptionRepositoryImpl(
         }
     }
 
-    override suspend fun getRedemptions(cashierId: Long): Result<List<com.skyprivilege.domain.model.RedemptionHistoryItem>> {
+    override suspend fun getRedemptions(cashierId: Long, todayOnly: Boolean): Result<List<com.skyprivilege.domain.model.RedemptionHistoryItem>> {
         return runCatching {
             val response = httpClient.get("/api/v1/redemptions") {
                 parameter("cashier_id", cashierId)
+                if (todayOnly) {
+                    parameter("today", "true")
+                }
             }.body<com.skyprivilege.data.remote.dto.RedemptionsListResponse>()
 
             if (response.success) {

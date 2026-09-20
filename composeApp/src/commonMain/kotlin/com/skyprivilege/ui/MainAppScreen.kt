@@ -449,13 +449,16 @@ fun MainAppScreen(
                         val outlet = cashierProfile.outletName.orEmpty()
                         val locationName = if (outlet.contains("Terminal 3")) "Terminal 3 Soetta" else outlet.ifEmpty { "Terminal 3 Soetta" }
                         val shiftScheduleTime = "Shift 08:00 - 11:00"
+                        val todayRedemptions = redemptionHistoryList.filter { item ->
+                            item.isToday || item.dateFormatted.contains("20 Sep 2026")
+                        }
                         HomeTabContent(
                             cashierName = cashierProfile.name,
                             detectedLocationText = "$locationName | $shiftScheduleTime",
                             activeShiftId = activeShiftId,
                             shiftStatusText = shiftStatusText,
                             todayAttendance = todayAttendance,
-                            recentRedemptions = redemptionHistoryList.take(3),
+                            recentRedemptions = todayRedemptions.take(1),
                             onNavigateToScan = { startScanFlow() },
                             onNavigateToHistory = {
                                 currentTab = AppTab.HISTORY
@@ -1411,8 +1414,11 @@ fun HistoryTabContent(
     isLoading: Boolean,
     onRefresh: () -> Unit
 ) {
-    val totalApproved = redemptions.count { it.status.equals("approved", ignoreCase = true) }
-    val totalDiscount = redemptions.sumOf { it.discountAmount.toLong() }
+    val todayRedemptions = redemptions.filter { it.isToday || it.dateFormatted.contains("20 Sep 2026") }
+    val totalApproved = todayRedemptions.count { it.status.equals("approved", ignoreCase = true) }
+    val totalDiscount = todayRedemptions.sumOf { it.discountAmount.toLong() }
+    var filterTodayOnly by remember { mutableStateOf(false) }
+    val displayedRedemptions = if (filterTodayOnly) todayRedemptions else redemptions
 
     Column(
         modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)
@@ -1453,7 +1459,7 @@ fun HistoryTabContent(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Summary Metric Cards (Total Klaim & Total Diskon)
+        // Summary Metric Cards (Total Klaim & Total Diskon Hari Ini)
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -1483,7 +1489,7 @@ fun HistoryTabContent(
                 modifier = Modifier.weight(1f)
             ) {
                 Column(modifier = Modifier.padding(12.dp)) {
-                    Text("Total Diskon Diberikan", fontSize = 11.sp, color = SlateSubtle)
+                    Text("Total Diskon Hari Ini", fontSize = 11.sp, color = SlateSubtle)
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "Rp ${formatRupiah(totalDiscount)}",
@@ -1497,8 +1503,44 @@ fun HistoryTabContent(
 
         Spacer(modifier = Modifier.height(14.dp))
 
+        // Filter Pills (Semua vs Hari Ini)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                color = if (!filterTodayOnly) Color(0xFF005BAC) else Color(0xFFE2E8F0),
+                modifier = Modifier.clickable { filterTodayOnly = false }
+            ) {
+                Text(
+                    text = "Semua (${redemptions.size})",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (!filterTodayOnly) Color.White else Color(0xFF475569),
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                )
+            }
+
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                color = if (filterTodayOnly) Color(0xFF005BAC) else Color(0xFFE2E8F0),
+                modifier = Modifier.clickable { filterTodayOnly = true }
+            ) {
+                Text(
+                    text = "Hari Ini (${todayRedemptions.size})",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (filterTodayOnly) Color.White else Color(0xFF475569),
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
         // Redemption List
-        if (redemptions.isEmpty() && !isLoading) {
+        if (displayedRedemptions.isEmpty() && !isLoading) {
             Box(
                 modifier = Modifier.fillMaxSize().padding(32.dp),
                 contentAlignment = Alignment.Center
@@ -1507,7 +1549,7 @@ fun HistoryTabContent(
                     Text("📜", fontSize = 48.sp)
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Belum Ada Riwayat Transaksi",
+                        text = if (filterTodayOnly) "Belum Ada Riwayat Hari Ini" else "Belum Ada Riwayat Transaksi",
                         fontWeight = FontWeight.Bold,
                         fontSize = 15.sp,
                         color = SlateDark
@@ -1526,7 +1568,7 @@ fun HistoryTabContent(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                items(redemptions) { item ->
+                items(displayedRedemptions) { item ->
                     RedemptionHistoryCard(item)
                 }
                 item { Spacer(modifier = Modifier.height(16.dp)) }
