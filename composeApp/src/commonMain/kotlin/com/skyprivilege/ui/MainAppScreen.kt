@@ -157,7 +157,7 @@ fun MainAppScreen(
             )
         )
     }
-    var isProfileLoading by remember { mutableStateOf(false) }
+    val profileRefreshController = remember { PullRefreshController() }
     var showEditProfileDialog by remember { mutableStateOf(false) }
     var isEditingProfile by remember { mutableStateOf(false) }
     var editProfileError by remember { mutableStateOf<String?>(null) }
@@ -233,11 +233,11 @@ fun MainAppScreen(
 
     // History data
     var redemptionHistoryList by remember { mutableStateOf<List<RedemptionHistoryItem>>(emptyList()) }
-    var isRedemptionsLoading by remember { mutableStateOf(false) }
+    val redemptionsRefreshController = remember { PullRefreshController() }
     var selectedRedemptionDetail by remember { mutableStateOf<RedemptionHistoryItem?>(null) }
 
     var attendanceHistoryList by remember { mutableStateOf<List<AttendanceHistoryItem>>(emptyList()) }
-    var isAttendancesLoading by remember { mutableStateOf(false) }
+    val attendancesRefreshController = remember { PullRefreshController() }
 
     val correctionHistoryList = remember {
         mutableStateListOf(
@@ -254,78 +254,66 @@ fun MainAppScreen(
 
     // Helper to refresh history
     fun refreshRedemptions() {
-        isRedemptionsLoading = true
         coroutineScope.launch {
-            redemptionRepo.getRedemptions(cashierId, todayOnly = true).onSuccess { list ->
-                redemptionHistoryList = list
-                isRedemptionsLoading = false
-            }.onFailure {
-                isRedemptionsLoading = false
+            redemptionsRefreshController.execute {
+                redemptionRepo.getRedemptions(cashierId, todayOnly = true).onSuccess { list ->
+                    redemptionHistoryList = list
+                }
             }
         }
     }
 
-    var isHomeLoading by remember { mutableStateOf(false) }
     val homeRefreshController = remember { PullRefreshController() }
 
     fun refreshHome() {
         coroutineScope.launch {
-            homeRefreshController.refresh {
-                isHomeLoading = true
-                try {
-                    shiftRepo.getCurrentShift(cashierId, outletId).onSuccess { res ->
-                        if (res.success && res.shift != null) {
-                            activeShiftId = res.shift.id
-                            shiftStatusText = "Shift #${res.shift.id} Aktif (Total Klaim: ${res.shift.totalRedemptionsCount})"
-                        }
+            homeRefreshController.execute {
+                shiftRepo.getCurrentShift(cashierId, outletId).onSuccess { res ->
+                    if (res.success && res.shift != null) {
+                        activeShiftId = res.shift.id
+                        shiftStatusText = "Shift #${res.shift.id} Aktif (Total Klaim: ${res.shift.totalRedemptionsCount})"
                     }
-                    attendanceRepo.getTodayAttendance(cashierId, outletId).onSuccess { res ->
-                        if (res.success) {
-                            todayAttendance = res.attendance
-                            hasCheckedIn = res.hasCheckedIn
-                            hasCheckedOut = res.hasCheckedOut
-                        }
+                }
+                attendanceRepo.getTodayAttendance(cashierId, outletId).onSuccess { res ->
+                    if (res.success) {
+                        todayAttendance = res.attendance
+                        hasCheckedIn = res.hasCheckedIn
+                        hasCheckedOut = res.hasCheckedOut
                     }
-                    redemptionRepo.getRedemptions(cashierId, todayOnly = true).onSuccess { list ->
-                        redemptionHistoryList = list
-                    }
-                    profileRepo.getProfile(cashierId).onSuccess { prof ->
-                        cashierProfile = prof
-                    }
-                } finally {
-                    isHomeLoading = false
+                }
+                redemptionRepo.getRedemptions(cashierId, todayOnly = true).onSuccess { list ->
+                    redemptionHistoryList = list
+                }
+                profileRepo.getProfile(cashierId).onSuccess { prof ->
+                    cashierProfile = prof
                 }
             }
         }
     }
 
     fun refreshAttendances() {
-        isAttendancesLoading = true
         coroutineScope.launch {
-            attendanceRepo.getTodayAttendance(cashierId, outletId).onSuccess { res ->
-                if (res.success) {
-                    todayAttendance = res.attendance
-                    hasCheckedIn = res.hasCheckedIn
-                    hasCheckedOut = res.hasCheckedOut
+            attendancesRefreshController.execute {
+                attendanceRepo.getTodayAttendance(cashierId, outletId).onSuccess { res ->
+                    if (res.success) {
+                        todayAttendance = res.attendance
+                        hasCheckedIn = res.hasCheckedIn
+                        hasCheckedOut = res.hasCheckedOut
+                    }
                 }
-            }
-            attendanceRepo.getAttendanceHistory(cashierId).onSuccess { list ->
-                attendanceHistoryList = list
-                isAttendancesLoading = false
-            }.onFailure {
-                isAttendancesLoading = false
+                attendanceRepo.getAttendanceHistory(cashierId).onSuccess { list ->
+                    attendanceHistoryList = list
+                }
             }
         }
     }
 
     fun refreshProfile() {
-        isProfileLoading = true
         coroutineScope.launch {
-            profileRepo.getProfile(cashierId).onSuccess { prof ->
-                cashierProfile = prof
-                isProfileLoading = false
-            }.onFailure {
-                isProfileLoading = false
+            profileRefreshController.execute {
+                profileRepo.getProfile(cashierId).onSuccess { prof ->
+                    cashierProfile = prof
+                }
             }
         }
     }
@@ -537,7 +525,7 @@ fun MainAppScreen(
                             hasCheckedIn = hasCheckedIn,
                             hasCheckedOut = hasCheckedOut,
                             recentRedemptions = todayRedemptions.take(1),
-                            isRefreshing = isHomeLoading,
+                            isRefreshing = homeRefreshController.isRefreshing,
                             onRefresh = { refreshHome() },
                             onNavigateToScan = { onAttemptScan() },
                             onNavigateToHistory = {
@@ -553,7 +541,7 @@ fun MainAppScreen(
                     AppTab.HISTORY -> {
                         HistoryTabContent(
                             redemptions = redemptionHistoryList,
-                            isLoading = isRedemptionsLoading,
+                            isLoading = redemptionsRefreshController.isRefreshing,
                             onRefresh = { refreshRedemptions() },
                             onItemClick = { item ->
                                 selectedRedemptionDetail = item
@@ -574,7 +562,7 @@ fun MainAppScreen(
                             todayAttendance = todayAttendance,
                             attendances = attendanceHistoryList,
                             corrections = correctionHistoryList,
-                            isLoading = isAttendancesLoading,
+                            isLoading = attendancesRefreshController.isRefreshing,
                             onRefresh = { refreshAttendances() },
                             onOpenRecordTime = {
                                 attendanceDialogError = null
@@ -590,7 +578,7 @@ fun MainAppScreen(
                     AppTab.AKUN_SAYA -> {
                         AkunSayaTabContent(
                             profile = cashierProfile,
-                            isLoading = isProfileLoading,
+                            isLoading = profileRefreshController.isRefreshing,
                             deviceId = deviceId,
                             onRefresh = { refreshProfile() },
                             onOpenEditProfile = {
@@ -634,6 +622,7 @@ fun MainAppScreen(
                     outletName = cashierProfile.outletName.orEmpty(),
                     isVerifying = isVerifyingTicket,
                     errorMessage = globalError,
+                    showDemoAffordance = false,
                     onDismiss = {
                         showCameraScanDialog = false
                         capturedPhotoBase64 = null

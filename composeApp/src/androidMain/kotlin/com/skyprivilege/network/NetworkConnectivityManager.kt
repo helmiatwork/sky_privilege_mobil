@@ -28,10 +28,44 @@ data class NetworkTransitionEvent(
     val timestampMs: Long
 )
 
-class NetworkConnectivityManager(private val context: Context) {
+/**
+ * Pure function to resolve the active network type based on transport flags.
+ * Hierarchy: Wi-Fi > Cellular > Ethernet (Other) > None
+ */
+fun resolveNetworkType(hasWifi: Boolean, hasCellular: Boolean, hasEthernet: Boolean): NetworkType {
+    return when {
+        hasWifi -> NetworkType.WIFI
+        hasCellular -> NetworkType.CELLULAR
+        hasEthernet -> NetworkType.OTHER
+        else -> NetworkType.NONE
+    }
+}
 
+/**
+ * Pure function to compute transition event between two network types.
+ * Returns null if network type has not changed (idempotent).
+ */
+fun computeTransition(
+    oldType: NetworkType,
+    newType: NetworkType,
+    timestampMs: Long = System.currentTimeMillis()
+): NetworkTransitionEvent? {
+    if (oldType == newType) return null
+    val isFailover = (oldType == NetworkType.WIFI && newType == NetworkType.CELLULAR)
+    return NetworkTransitionEvent(
+        previousType = oldType,
+        currentType = newType,
+        isFailover = isFailover,
+        timestampMs = timestampMs
+    )
+}
+
+class NetworkConnectivityManager(context: Context) {
+
+    // Store only applicationContext to prevent Activity memory leaks
+    private val appContext = context.applicationContext
     private val connectivityManager =
-        context.applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        appContext.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
     private val _currentNetworkType = MutableStateFlow(NetworkType.NONE)
     val currentNetworkType: StateFlow<NetworkType> = _currentNetworkType.asStateFlow()
@@ -54,19 +88,12 @@ class NetworkConnectivityManager(private val context: Context) {
             }
 
             override fun onCapabilitiesChanged(network: Network, networkCapabilities: NetworkCapabilities) {
-                val newType = resolveNetworkType(networkCapabilities)
+                val newType = resolveNetworkTypeFromCapabilities(networkCapabilities)
                 val oldType = _currentNetworkType.value
 
-                if (oldType != newType) {
-                    val isFailover = (oldType == NetworkType.WIFI && newType == NetworkType.CELLULAR)
-                    val event = NetworkTransitionEvent(
-                        previousType = oldType,
-                        currentType = newType,
-                        isFailover = isFailover,
-                        timestampMs = System.currentTimeMillis()
-                    )
-
-                    if (isFailover) {
+                val event = computeTransition(oldType, newType)
+                if (event != null) {
+                    if (event.isFailover) {
                         Log.w(TAG, "DUAL-SIM FAILOVER DETECTED: Transisi Wi-Fi -> Seluler 4G/LTE!")
                     } else {
                         Log.i(TAG, "Network transition: $oldType -> $newType")
@@ -82,13 +109,8 @@ class NetworkConnectivityManager(private val context: Context) {
                 val activeNetwork = connectivityManager.activeNetwork
                 if (activeNetwork == null) {
                     val oldType = _currentNetworkType.value
-                    if (oldType != NetworkType.NONE) {
-                        val event = NetworkTransitionEvent(
-                            previousType = oldType,
-                            currentType = NetworkType.NONE,
-                            isFailover = false,
-                            timestampMs = System.currentTimeMillis()
-                        )
+                    val event = computeTransition(oldType, NetworkType.NONE)
+                    if (event != null) {
                         _currentNetworkType.value = NetworkType.NONE
                         _transitionEvents.tryEmit(event)
                     }
@@ -138,19 +160,17 @@ class NetworkConnectivityManager(private val context: Context) {
         try {
             val activeNetwork = connectivityManager.activeNetwork ?: return
             val capabilities = connectivityManager.getNetworkCapabilities(activeNetwork) ?: return
-            _currentNetworkType.value = resolveNetworkType(capabilities)
+            _currentNetworkType.value = resolveNetworkTypeFromCapabilities(capabilities)
         } catch (e: Exception) {
             Log.w(TAG, "Failed to evaluate initial network state: ${e.message}")
         }
     }
 
-    private fun resolveNetworkType(capabilities: NetworkCapabilities): NetworkType {
-        return when {
-            capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> NetworkType.WIFI
-            capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> NetworkType.CELLULAR
-            capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> NetworkType.OTHER
-            else -> NetworkType.OTHER
-        }
+    private fun resolveNetworkTypeFromCapabilities(capabilities: NetworkCapabilities): NetworkType {
+        val hasWifi = capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
+        val hasCellular = capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)
+        val hasEthernet = capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)
+        return resolveNetworkType(hasWifi = hasWifi, hasCellular = hasCellular, hasEthernet = hasEthernet)
     }
 
     companion object {
