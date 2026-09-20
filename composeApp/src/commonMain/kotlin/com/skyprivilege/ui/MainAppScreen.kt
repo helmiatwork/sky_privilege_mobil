@@ -234,7 +234,7 @@ fun MainAppScreen(
     fun refreshRedemptions() {
         isRedemptionsLoading = true
         coroutineScope.launch {
-            redemptionRepo.getRedemptions(cashierId).onSuccess { list ->
+            redemptionRepo.getRedemptions(cashierId, todayOnly = true).onSuccess { list ->
                 redemptionHistoryList = list
                 isRedemptionsLoading = false
             }.onFailure {
@@ -1290,11 +1290,11 @@ fun HistoryTabContent(
     isLoading: Boolean,
     onRefresh: () -> Unit
 ) {
+    // Strictly show today's transactions only (no yesterday history)
     val todayRedemptions = redemptions.filter { it.isToday || it.dateFormatted.contains("20 Sep 2026") }
     val totalApproved = todayRedemptions.count { it.status.equals("approved", ignoreCase = true) }
     val totalDiscount = todayRedemptions.sumOf { it.discountAmount.toLong() }
-    var filterTodayOnly by remember { mutableStateOf(false) }
-    val displayedRedemptions = if (filterTodayOnly) todayRedemptions else redemptions
+    val displayedRedemptions = todayRedemptions
 
     Column(
         modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)
@@ -1315,7 +1315,7 @@ fun HistoryTabContent(
                     color = SlateDark
                 )
                 Text(
-                    text = "Daftar klaim diskon boarding pass kasir",
+                    text = "Daftar klaim diskon boarding pass hari ini",
                     fontSize = 12.sp,
                     color = SlateSubtle
                 )
@@ -1379,42 +1379,6 @@ fun HistoryTabContent(
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        // Filter Pills (Semua vs Hari Ini)
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Surface(
-                shape = RoundedCornerShape(20.dp),
-                color = if (!filterTodayOnly) Color(0xFF005BAC) else Color(0xFFE2E8F0),
-                modifier = Modifier.clickable { filterTodayOnly = false }
-            ) {
-                Text(
-                    text = "Semua (${redemptions.size})",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = if (!filterTodayOnly) Color.White else Color(0xFF475569),
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
-                )
-            }
-
-            Surface(
-                shape = RoundedCornerShape(20.dp),
-                color = if (filterTodayOnly) Color(0xFF005BAC) else Color(0xFFE2E8F0),
-                modifier = Modifier.clickable { filterTodayOnly = true }
-            ) {
-                Text(
-                    text = "Hari Ini (${todayRedemptions.size})",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = if (filterTodayOnly) Color.White else Color(0xFF475569),
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
         // Redemption List
         if (displayedRedemptions.isEmpty() && !isLoading) {
             Box(
@@ -1425,7 +1389,7 @@ fun HistoryTabContent(
                     Text("📜", fontSize = 48.sp)
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = if (filterTodayOnly) "Belum Ada Riwayat Hari Ini" else "Belum Ada Riwayat Transaksi",
+                        text = "Belum Ada Riwayat Hari Ini",
                         fontWeight = FontWeight.Bold,
                         fontSize = 15.sp,
                         color = SlateDark
