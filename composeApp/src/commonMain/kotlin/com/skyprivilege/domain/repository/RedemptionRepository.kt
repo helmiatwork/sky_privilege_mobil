@@ -25,5 +25,5 @@ interface RedemptionRepository {
         reason: String
     ): Result<Boolean>
 
-    suspend fun getRedemptions(cashierId: Long): Result<List<com.skyprivilege.domain.model.RedemptionHistoryItem>>
+    suspend fun getRedemptions(cashierId: Long, todayOnly: Boolean = false): Result<List<com.skyprivilege.domain.model.RedemptionHistoryItem>>
 }
