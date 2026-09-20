@@ -213,6 +213,7 @@ fun MainAppScreen(
     // History data
     var redemptionHistoryList by remember { mutableStateOf<List<RedemptionHistoryItem>>(emptyList()) }
     var isRedemptionsLoading by remember { mutableStateOf(false) }
+    var selectedRedemptionDetail by remember { mutableStateOf<RedemptionHistoryItem?>(null) }
 
     var attendanceHistoryList by remember { mutableStateOf<List<AttendanceHistoryItem>>(emptyList()) }
     var isAttendancesLoading by remember { mutableStateOf(false) }
@@ -462,6 +463,9 @@ fun MainAppScreen(
                             onNavigateToHistory = {
                                 currentTab = AppTab.HISTORY
                                 refreshRedemptions()
+                            },
+                            onRedemptionClick = { item ->
+                                selectedRedemptionDetail = item
                             }
                         )
                     }
@@ -470,7 +474,10 @@ fun MainAppScreen(
                         HistoryTabContent(
                             redemptions = redemptionHistoryList,
                             isLoading = isRedemptionsLoading,
-                            onRefresh = { refreshRedemptions() }
+                            onRefresh = { refreshRedemptions() },
+                            onItemClick = { item ->
+                                selectedRedemptionDetail = item
+                            }
                         )
                     }
 
@@ -856,6 +863,13 @@ fun MainAppScreen(
                     }
                 )
             }
+
+            if (selectedRedemptionDetail != null) {
+                RedemptionDetailDialog(
+                    item = selectedRedemptionDetail!!,
+                    onDismiss = { selectedRedemptionDetail = null }
+                )
+            }
         }
     }
 }
@@ -873,6 +887,7 @@ fun HomeTabContent(
     recentRedemptions: List<RedemptionHistoryItem>,
     onNavigateToScan: () -> Unit,
     onNavigateToHistory: () -> Unit,
+    onRedemptionClick: (RedemptionHistoryItem) -> Unit = {},
     onOpenAttendance: () -> Unit = {},
     onOpenCorrection: () -> Unit = {},
     onOpenChecklist: () -> Unit = {},
@@ -1040,7 +1055,10 @@ fun HomeTabContent(
             } else {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     recentRedemptions.forEach { item ->
-                        RedemptionHistoryCard(item)
+                        RedemptionHistoryCard(
+                            item = item,
+                            onClick = { onRedemptionClick(item) }
+                        )
                     }
                 }
             }
@@ -1288,7 +1306,8 @@ fun LogoutConfirmDialog(
 fun HistoryTabContent(
     redemptions: List<RedemptionHistoryItem>,
     isLoading: Boolean,
-    onRefresh: () -> Unit
+    onRefresh: () -> Unit,
+    onItemClick: (RedemptionHistoryItem) -> Unit = {}
 ) {
     // Strictly show today's transactions only (no yesterday history)
     val todayRedemptions = redemptions.filter { it.isToday || it.dateFormatted.contains("20 Sep 2026") }
@@ -1409,7 +1428,10 @@ fun HistoryTabContent(
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 items(displayedRedemptions) { item ->
-                    RedemptionHistoryCard(item)
+                    RedemptionHistoryCard(
+                        item = item,
+                        onClick = { onItemClick(item) }
+                    )
                 }
                 item { Spacer(modifier = Modifier.height(16.dp)) }
             }
@@ -1418,12 +1440,17 @@ fun HistoryTabContent(
 }
 
 @Composable
-fun RedemptionHistoryCard(item: RedemptionHistoryItem) {
+fun RedemptionHistoryCard(
+    item: RedemptionHistoryItem,
+    onClick: () -> Unit = {}
+) {
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
             Row(
