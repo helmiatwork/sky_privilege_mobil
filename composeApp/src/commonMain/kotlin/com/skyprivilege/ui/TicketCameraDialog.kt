@@ -94,38 +94,19 @@ fun TicketCameraDialog(
                     .padding(18.dp)
             ) {
                 // Header
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(
-                            text = "Foto & Pindai Tiket",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF0F172A)
-                        )
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = "Tahap 2: Ambil foto boarding pass penumpang",
-                            fontSize = 11.sp,
-                            color = Color(0xFF64748B)
-                        )
-                    }
-
-                    Surface(
-                        shape = RoundedCornerShape(6.dp),
-                        color = Color(0xFFDCFCE7)
-                    ) {
-                        Text(
-                            text = "✅ Checklist OK",
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF15803D),
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                        )
-                    }
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = "Foto & Pindai Tiket",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF0F172A)
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "Tahap 2: Ambil foto boarding pass penumpang",
+                        fontSize = 11.sp,
+                        color = Color(0xFF64748B)
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))

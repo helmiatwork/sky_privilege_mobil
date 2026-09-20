@@ -268,7 +268,6 @@ fun MainAppScreen(
     }
 
     fun startScanFlow() {
-        currentTab = AppTab.SCAN
         if (!checklistConfirmed) {
             if (guidelines.isEmpty()) {
                 isGuidelinesLoading = true
@@ -281,7 +280,7 @@ fun MainAppScreen(
                         guidelines = listOf(
                             TicketGuideline(1, "Kertas Fisik Asli", "Tiket thermal cetak asli bandara, tidak ada bekas tempelan/potongan.", "physical_print", 1),
                             TicketGuideline(2, "E-Ticket Digital Resmi", "Dibuka langsung dari aplikasi resmi maskapai atau OTA (bukan screenshot WA).", "digital_eticket", 2),
-                            TicketGuideline(3, "Masa Berlaku Penerbangan", "Tanggal penerbangan harus hari H s/d H+2.", "flight_date", 3),
+                            TicketGuideline(3, "Masa Berlaku Penerbangan", "Tanggal penerbangan harus hari ini atau besok (Hari H s/d H+1).", "flight_date", 3),
                             TicketGuideline(4, "Kualitas Barcode", "Barcode PDF417 / Aztec terlihat tajam dan tidak buram.", "barcode", 4)
                         )
                         isGuidelinesLoading = false
@@ -476,141 +475,10 @@ fun MainAppScreen(
                     }
 
                     AppTab.SCAN -> {
-                        ScanTabContent(
-                            checklistConfirmed = checklistConfirmed,
-                            activeShiftId = activeShiftId,
-                            barcodeInput = barcodeInput,
-                            onBarcodeInputChanged = { barcodeInput = it },
-                            isVerifying = isVerifyingTicket,
-                            verifiedTicket = verifiedTicket,
-                            isClaiming = isClaimingDiscount,
-                            redemptionSuccessMsg = redemptionSuccessMsg,
-                            onOpenChecklist = {
-                                isGuidelinesLoading = true
-                                coroutineScope.launch {
-                                    guidelineRepo.getGuidelines().onSuccess { list ->
-                                        guidelines = list
-                                        isGuidelinesLoading = false
-                                        showChecklistDialog = true
-                                    }.onFailure { err ->
-                                        globalError = "Gagal memuat panduan: ${err.message}"
-                                        isGuidelinesLoading = false
-                                    }
-                                }
-                            },
-                            onOpenCamera = {
-                                if (!checklistConfirmed) {
-                                    startScanFlow()
-                                } else {
-                                    showCameraScanDialog = true
-                                }
-                            },
-                            onVerifyTicket = {
-                                if (!checklistConfirmed) {
-                                    globalError = "Wajib konfirmasi checklist keaslian fisik terlebih dahulu!"
-                                    return@ScanTabContent
-                                }
-                                if (activeShiftId == null) {
-                                    globalError = "Wajib buka shift kasir terlebih dahulu!"
-                                    return@ScanTabContent
-                                }
-                                isVerifyingTicket = true
-                                globalError = null
-                                verifiedTicket = null
-                                redemptionSuccessMsg = null
-
-                                coroutineScope.launch {
-                                    ticketRepo.verifyBarcode(
-                                        BarcodeData(
-                                            rawPayload = barcodeInput.trim(),
-                                            format = com.skyprivilege.domain.model.BarcodeFormat.AZTEC
-                                        ),
-                                        outletId = outletId
-                                    ).onSuccess { ticket ->
-                                        verifiedTicket = ticket
-                                        isVerifyingTicket = false
-                                        showTicketValidDialog = true
-                                    }.onFailure { err ->
-                                        isVerifyingTicket = false
-                                        if (err is TicketVerificationException) {
-                                            ticketInvalidError = err.message
-                                            ticketInvalidRedeemedAt = err.redeemedAt
-                                            ticketInvalidRedeemedOutlet = err.redeemedOutlet
-                                            ticketInvalidRedeemedCashier = err.redeemedCashier
-                                        } else {
-                                            ticketInvalidError = err.message ?: "Tiket tidak valid atau melanggar aturan Anti-Fraud"
-                                            ticketInvalidRedeemedAt = null
-                                            ticketInvalidRedeemedOutlet = null
-                                            ticketInvalidRedeemedCashier = null
-                                        }
-                                        showTicketInvalidDialog = true
-                                    }
-                                }
-                            },
-                            onClaimDiscount = { t ->
-                                isClaimingDiscount = true
-                                globalError = null
-                                coroutineScope.launch {
-                                    val orderId = "ORD-" + (System.currentTimeMillis() % 100000)
-                                    val amountCents = 2_500_000L // Rp 25.000
-
-                                    redemptionRepo.requestClaimToken(
-                                        orderId = orderId,
-                                        pnrHash = t.canonicalHash.orEmpty(),
-                                        outletId = outletId,
-                                        cashierId = cashierId,
-                                        amountCents = amountCents,
-                                        signals = LocationContext(
-                                            gps = com.skyprivilege.domain.model.GpsCoordinate(
-                                                latitude = -6.1256,
-                                                longitude = 106.6558,
-                                                accuracyMeters = 15f,
-                                                isMock = false
-                                            ),
-                                            wifi = com.skyprivilege.domain.model.WifiContext(
-                                                bssid = "aa:bb:cc:dd:ee:ff",
-                                                ssid = "SkyPrivilege_Staff",
-                                                rssiDbm = -60
-                                            ),
-                                            deviceIntegrity = com.skyprivilege.domain.model.DeviceIntegrityContext(
-                                                deviceRecognition = "MEETS_BASIC_INTEGRITY",
-                                                isRooted = false,
-                                                isEmulator = false
-                                            )
-                                        )
-                                    ).onSuccess { token ->
-                                        claimToken = token
-                                        redemptionRepo.submitRedemption(
-                                            RedemptionClaim(
-                                                ticket = t,
-                                                orderId = orderId,
-                                                outletId = outletId,
-                                                cashierId = cashierId,
-                                                amountCents = amountCents,
-                                                claimToken = token,
-                                                shiftId = activeShiftId
-                                            )
-                                        ).onSuccess { redId ->
-                                            redemptionSuccessMsg = "Klaim Berhasil! ID Transaksi: #$redId (Diskon Rp 25.000 diinjeksi ke Moka POS Order: $orderId)"
-                                            isClaimingDiscount = false
-                                            refreshRedemptions()
-                                        }.onFailure { claimErr ->
-                                            globalError = "Klaim gagal: ${claimErr.message}"
-                                            isClaimingDiscount = false
-                                        }
-                                    }.onFailure { tokenErr ->
-                                        globalError = "Otorisasi token gagal: ${tokenErr.message}"
-                                        isClaimingDiscount = false
-                                    }
-                                }
-                            },
-                            onResetScan = {
-                                verifiedTicket = null
-                                barcodeInput = ""
-                                redemptionSuccessMsg = null
-                                checklistConfirmed = false
-                            }
-                        )
+                        // User requirement: "halaman ini g perlu, kalau scan gagal balik ke home aja"
+                        LaunchedEffect(Unit) {
+                            currentTab = AppTab.HOME
+                        }
                     }
 
                     AppTab.ABSEN -> {
@@ -659,7 +527,10 @@ fun MainAppScreen(
                     guidelines = guidelines,
                     isLoading = isGuidelinesLoading,
                     isSubmitting = false,
-                    onDismiss = { showChecklistDialog = false },
+                    onDismiss = {
+                        showChecklistDialog = false
+                        currentTab = AppTab.HOME
+                    },
                     onConfirm = {
                         // User requirement: "itu jangan di post ke backend, habis dia checklist udah ada dan valid secara manual, nanti kmudian akan di bukakan kamera untuk foto tiket"
                         checklistConfirmed = true
@@ -675,7 +546,10 @@ fun MainAppScreen(
                     outletName = cashierProfile.outletName.orEmpty(),
                     isVerifying = isVerifyingTicket,
                     errorMessage = globalError,
-                    onDismiss = { showCameraScanDialog = false },
+                    onDismiss = {
+                        showCameraScanDialog = false
+                        currentTab = AppTab.HOME
+                    },
                     onSubmitTicket = { barcodeData, imageBase64 ->
                         isVerifyingTicket = true
                         globalError = null
@@ -734,6 +608,7 @@ fun MainAppScreen(
                         ticketInvalidRedeemedOutlet = null
                         ticketInvalidRedeemedCashier = null
                         checklistConfirmed = false
+                        currentTab = AppTab.HOME
                     }
                 )
             }
@@ -746,6 +621,7 @@ fun MainAppScreen(
                     redemptionSuccessMsg = redemptionSuccessMsg,
                     onDismiss = {
                         showTicketValidDialog = false
+                        currentTab = AppTab.HOME
                         if (redemptionSuccessMsg != null) {
                             checklistConfirmed = false
                             verifiedTicket = null

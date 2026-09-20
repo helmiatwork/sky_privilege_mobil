@@ -34,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -84,28 +85,13 @@ fun AuthenticityChecklistDialog(
                     .padding(20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Header Warning Badge
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Color(0xFFFFF3E0))
-                        .padding(horizontal = 12.dp, vertical = 6.dp)
-                ) {
-                    Text(
-                        text = "PERINGATAN ANTI-FRAUD",
-                        color = Color(0xFFE65100),
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(10.dp))
-
                 Text(
                     text = "Konfirmasi Keaslian Tiket",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
                 )
 
                 Spacer(modifier = Modifier.height(6.dp))
@@ -113,7 +99,9 @@ fun AuthenticityChecklistDialog(
                 Text(
                     text = "Pastikan ciri-ciri keaslian tiket fisik/digital di bawah ini telah diverifikasi sebelum mengaktifkan kamera pemindai:",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
                 )
 
                 Spacer(modifier = Modifier.height(14.dp))
@@ -149,13 +137,11 @@ fun AuthenticityChecklistDialog(
                         )
                     }
                 } else {
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(max = 300.dp),
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        items(guidelines, key = { it.id }) { guideline ->
+                        guidelines.forEach { guideline ->
                             val isChecked = checkedMap[guideline.id] ?: false
 
                             Card(
@@ -176,7 +162,7 @@ fun AuthenticityChecklistDialog(
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(10.dp),
+                                        .padding(horizontal = 10.dp, vertical = 8.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Checkbox(
@@ -241,7 +227,7 @@ fun AuthenticityChecklistDialog(
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(text = "Merekam...", fontSize = 11.sp)
                         } else {
-                            Text(text = "Konfirmasi Manual & Lanjut ke Kamera", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            Text(text = "Konfirmasi", fontSize = 13.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 }

@@ -185,7 +185,7 @@ fun TicketInvalidWarningDialog(
                     shape = RoundedCornerShape(10.dp)
                 ) {
                     Text(
-                        text = "Tutup & Scan Ulang",
+                        text = "Tutup",
                         color = Color.White,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold
