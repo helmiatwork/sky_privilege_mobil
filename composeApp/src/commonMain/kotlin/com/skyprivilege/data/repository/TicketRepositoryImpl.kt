@@ -4,6 +4,7 @@ import com.skyprivilege.data.remote.dto.VerifyTicketRequest
 import com.skyprivilege.data.remote.dto.VerifyTicketResponse
 import com.skyprivilege.domain.model.BarcodeData
 import com.skyprivilege.domain.model.Ticket
+import com.skyprivilege.domain.model.TicketVerificationException
 import com.skyprivilege.domain.repository.TicketRepository
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -50,7 +51,13 @@ class TicketRepositoryImpl(
                     isValid = t.valid
                 )
             } else {
-                throw IllegalStateException(body.error ?: "Gagal memverifikasi tiket")
+                throw TicketVerificationException(
+                    message = body.error ?: "Gagal memverifikasi tiket",
+                    reasonCode = body.reasonCode,
+                    redeemedAt = body.redeemedAtFormatted ?: body.redeemedAt,
+                    redeemedOutlet = body.redeemedOutlet,
+                    redeemedCashier = body.redeemedCashier
+                )
             }
         }
     }
@@ -108,7 +115,13 @@ class TicketRepositoryImpl(
                     isValid = t.valid
                 )
             } else {
-                throw IllegalStateException(body.error ?: "Tiket tidak valid atau gagal diverifikasi")
+                throw TicketVerificationException(
+                    message = body.error ?: "Tiket tidak valid atau gagal diverifikasi",
+                    reasonCode = body.reasonCode,
+                    redeemedAt = body.redeemedAtFormatted ?: body.redeemedAt,
+                    redeemedOutlet = body.redeemedOutlet,
+                    redeemedCashier = body.redeemedCashier
+                )
             }
         }
     }

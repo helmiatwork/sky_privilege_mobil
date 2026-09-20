@@ -76,6 +76,7 @@ fun TicketCameraDialog(
     val todayJulian = "263"
     val validSampleBarcode = "M1SANTOSO/BUDI MR     EABC1234CGKDPSGA 00410${todayJulian}Y012A00042100"
     val expiredSampleBarcode = "M1DOE/JOHN MR         EABC1234CGKDPSGA 00402255Y012A00042100" // 5 days earlier
+    val redeemedSampleBarcode = "M1TEST/ANDHIKA         EABC1234CGKDPSGA 0410${todayJulian}Y012A00042100"
 
     var selectedTicket by remember {
         mutableStateOf<SelectedTicketData?>(
@@ -265,7 +266,7 @@ fun TicketCameraDialog(
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    horizontalArrangement = Arrangement.spacedBy(5.dp)
                 ) {
                     Button(
                         onClick = {
@@ -278,17 +279,17 @@ fun TicketCameraDialog(
                             )
                         },
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = if (selectedTicket?.isSimulationInvalid == false && selectedTicket != null)
+                            containerColor = if (selectedTicket?.barcodeData == validSampleBarcode)
                                 Color(0xFF005BAC) else Color(0xFFF1F5F9)
                         ),
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(8.dp)
                     ) {
                         Text(
-                            text = "⚡ Tiket Valid (GA410)",
+                            text = "⚡ Valid",
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
-                            color = if (selectedTicket?.isSimulationInvalid == false && selectedTicket != null)
+                            color = if (selectedTicket?.barcodeData == validSampleBarcode)
                                 Color.White else Color(0xFF334155)
                         )
                     }
@@ -304,18 +305,44 @@ fun TicketCameraDialog(
                                 isSimulationInvalid = true
                             )
                         },
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1.1f),
                         shape = RoundedCornerShape(8.dp),
                         colors = ButtonDefaults.outlinedButtonColors(
-                            containerColor = if (selectedTicket?.isSimulationInvalid == true)
+                            containerColor = if (selectedTicket?.barcodeData == expiredSampleBarcode)
                                 Color(0xFFFEE2E2) else Color.Transparent
                         )
                     ) {
                         Text(
-                            text = "⚠️ Uji Kedaluwarsa",
+                            text = "⚠️ Kedaluwarsa",
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFFDC2626)
+                        )
+                    }
+
+                    OutlinedButton(
+                        onClick = {
+                            selectedTicket = SelectedTicketData(
+                                barcodeData = redeemedSampleBarcode,
+                                previewLabel = "Tiket Pernah Diklaim (Uji Double Claim)",
+                                passengerName = "TEST/ANDHIKA",
+                                flightNumber = "SGA410 (CGK -> DPS)",
+                                flightDate = todayDate,
+                                isSimulationInvalid = true
+                            )
+                        },
+                        modifier = Modifier.weight(1.2f),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            containerColor = if (selectedTicket?.barcodeData == redeemedSampleBarcode)
+                                Color(0xFFFEF3C7) else Color.Transparent
+                        )
+                    ) {
+                        Text(
+                            text = "♻️ Pernah Dipakai",
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFB45309)
                         )
                     }
                 }

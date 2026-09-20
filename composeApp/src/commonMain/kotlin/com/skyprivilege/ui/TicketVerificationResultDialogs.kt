@@ -39,6 +39,9 @@ import com.skyprivilege.domain.model.Ticket
 @Composable
 fun TicketInvalidWarningDialog(
     errorMessage: String,
+    redeemedAt: String? = null,
+    redeemedOutlet: String? = null,
+    redeemedCashier: String? = null,
     onDismiss: () -> Unit
 ) {
     Dialog(
@@ -110,6 +113,47 @@ fun TicketInvalidWarningDialog(
                             color = Color(0xFF881337),
                             lineHeight = 16.sp
                         )
+                    }
+                }
+
+                val hasRedemptionHistory = !redeemedAt.isNullOrBlank() || !redeemedOutlet.isNullOrBlank() || !redeemedCashier.isNullOrBlank()
+                if (hasRedemptionHistory) {
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Card(
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFEF2F2)),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFCA5A5)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(14.dp)) {
+                            Text(
+                                text = "📋 Riwayat Penggunaan Sebelumnya:",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF991B1B)
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            if (!redeemedAt.isNullOrBlank()) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text("🕒 Waktu", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF7F1D1D), modifier = Modifier.width(65.dp))
+                                    Text(": $redeemedAt", fontSize = 11.sp, color = Color(0xFF1E293B), fontWeight = FontWeight.Medium)
+                                }
+                                Spacer(modifier = Modifier.height(4.dp))
+                            }
+                            if (!redeemedOutlet.isNullOrBlank()) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text("📍 Lokasi", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF7F1D1D), modifier = Modifier.width(65.dp))
+                                    Text(": $redeemedOutlet", fontSize = 11.sp, color = Color(0xFF1E293B), fontWeight = FontWeight.Medium)
+                                }
+                                Spacer(modifier = Modifier.height(4.dp))
+                            }
+                            if (!redeemedCashier.isNullOrBlank()) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text("👤 Petugas", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF7F1D1D), modifier = Modifier.width(65.dp))
+                                    Text(": $redeemedCashier", fontSize = 11.sp, color = Color(0xFF1E293B), fontWeight = FontWeight.Medium)
+                                }
+                            }
+                        }
                     }
                 }
 
