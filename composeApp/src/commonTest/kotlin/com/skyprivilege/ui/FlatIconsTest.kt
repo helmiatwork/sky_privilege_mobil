@@ -23,7 +23,7 @@ class FlatIconsTest {
     @Test
     fun testFlatIconTypesDefined() {
         val types = FlatIconType.values()
-        assertEquals(13, types.size)
+        assertEquals(14, types.size)
         assertNotNull(FlatIconType.HOME)
         assertNotNull(FlatIconType.TRANSACTION)
         assertNotNull(FlatIconType.SCAN)
@@ -37,6 +37,13 @@ class FlatIconsTest {
         assertNotNull(FlatIconType.VOUCHER_TICKET)
         assertNotNull(FlatIconType.HISTORY_CLOCK)
         assertNotNull(FlatIconType.BOOK_SOP)
+        assertNotNull(FlatIconType.GARUDA_LOGO)
+    }
+
+    @Test
+    fun testGarudaLogoIconTypeDefined() {
+        assertNotNull(FlatIconType.GARUDA_LOGO)
+        assertEquals("GARUDA_LOGO", FlatIconType.GARUDA_LOGO.name)
     }
 
     @Test
