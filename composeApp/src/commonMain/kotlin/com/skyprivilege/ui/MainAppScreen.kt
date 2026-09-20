@@ -201,6 +201,10 @@ fun MainAppScreen(
     var isClaimingDiscount by remember { mutableStateOf(false) }
     var redemptionSuccessMsg by remember { mutableStateOf<String?>(null) }
     var globalError by remember { mutableStateOf<String?>(null) }
+    var showCameraScanDialog by remember { mutableStateOf(false) }
+    var showTicketInvalidDialog by remember { mutableStateOf(false) }
+    var ticketInvalidError by remember { mutableStateOf<String?>(null) }
+    var showTicketValidDialog by remember { mutableStateOf(false) }
 
     // History data
     var redemptionHistoryList by remember { mutableStateOf<List<RedemptionHistoryItem>>(emptyList()) }
@@ -256,6 +260,35 @@ fun MainAppScreen(
             }.onFailure {
                 isProfileLoading = false
             }
+        }
+    }
+
+    fun startScanFlow() {
+        currentTab = AppTab.SCAN
+        if (!checklistConfirmed) {
+            if (guidelines.isEmpty()) {
+                isGuidelinesLoading = true
+                coroutineScope.launch {
+                    guidelineRepo.getGuidelines().onSuccess { list ->
+                        guidelines = list
+                        isGuidelinesLoading = false
+                        showChecklistDialog = true
+                    }.onFailure {
+                        guidelines = listOf(
+                            TicketGuideline(1, "Kertas Fisik Asli", "Tiket thermal cetak asli bandara, tidak ada bekas tempelan/potongan.", "physical_print", 1),
+                            TicketGuideline(2, "E-Ticket Digital Resmi", "Dibuka langsung dari aplikasi resmi maskapai atau OTA (bukan screenshot WA).", "digital_eticket", 2),
+                            TicketGuideline(3, "Masa Berlaku Penerbangan", "Tanggal penerbangan harus hari H s/d H+2.", "flight_date", 3),
+                            TicketGuideline(4, "Kualitas Barcode", "Barcode PDF417 / Aztec terlihat tajam dan tidak buram.", "barcode", 4)
+                        )
+                        isGuidelinesLoading = false
+                        showChecklistDialog = true
+                    }
+                }
+            } else {
+                showChecklistDialog = true
+            }
+        } else {
+            showCameraScanDialog = true
         }
     }
 
@@ -333,10 +366,14 @@ fun MainAppScreen(
             BcaBottomNavigationBar(
                 currentTab = currentTab,
                 onTabSelected = { tab ->
-                    currentTab = tab
-                    if (tab == AppTab.HISTORY) refreshRedemptions()
-                    if (tab == AppTab.ABSEN) refreshAttendances()
-                    if (tab == AppTab.AKUN_SAYA) refreshProfile()
+                    if (tab == AppTab.SCAN) {
+                        startScanFlow()
+                    } else {
+                        currentTab = tab
+                        if (tab == AppTab.HISTORY) refreshRedemptions()
+                        if (tab == AppTab.ABSEN) refreshAttendances()
+                        if (tab == AppTab.AKUN_SAYA) refreshProfile()
+                    }
                 }
             )
         }
@@ -415,7 +452,7 @@ fun MainAppScreen(
                             shiftStatusText = shiftStatusText,
                             todayAttendance = todayAttendance,
                             recentRedemptions = redemptionHistoryList.take(3),
-                            onNavigateToScan = { currentTab = AppTab.SCAN },
+                            onNavigateToScan = { startScanFlow() },
                             onNavigateToHistory = {
                                 currentTab = AppTab.HISTORY
                                 refreshRedemptions()
@@ -452,6 +489,13 @@ fun MainAppScreen(
                                         globalError = "Gagal memuat panduan: ${err.message}"
                                         isGuidelinesLoading = false
                                     }
+                                }
+                            },
+                            onOpenCamera = {
+                                if (!checklistConfirmed) {
+                                    startScanFlow()
+                                } else {
+                                    showCameraScanDialog = true
                                 }
                             },
                             onVerifyTicket = {
@@ -545,6 +589,7 @@ fun MainAppScreen(
                                 verifiedTicket = null
                                 barcodeInput = ""
                                 redemptionSuccessMsg = null
+                                checklistConfirmed = false
                             }
                         )
                     }
@@ -594,31 +639,139 @@ fun MainAppScreen(
                 AuthenticityChecklistDialog(
                     guidelines = guidelines,
                     isLoading = isGuidelinesLoading,
-                    isSubmitting = isChecklistSubmitting,
+                    isSubmitting = false,
                     onDismiss = { showChecklistDialog = false },
                     onConfirm = {
-                        isChecklistSubmitting = true
+                        // User requirement: "itu jangan di post ke backend, habis dia checklist udah ada dan valid secara manual, nanti kmudian akan di bukakan kamera untuk foto tiket"
+                        checklistConfirmed = true
+                        showChecklistDialog = false
+                        showCameraScanDialog = true
+                    }
+                )
+            }
+
+            if (showCameraScanDialog) {
+                TicketCameraDialog(
+                    cashierName = cashierProfile.name,
+                    outletName = cashierProfile.outletName.orEmpty(),
+                    isVerifying = isVerifyingTicket,
+                    errorMessage = globalError,
+                    onDismiss = { showCameraScanDialog = false },
+                    onSubmitTicket = { barcodeData, imageBase64 ->
+                        isVerifyingTicket = true
+                        globalError = null
                         coroutineScope.launch {
-                            guidelineRepo.submitAcknowledgment(
-                                AuthenticityAcknowledgmentDto(
-                                    cashierId = cashierId,
-                                    outletId = outletId,
-                                    deviceId = 1L,
-                                    wifiBssid = "aa:bb:cc:dd:ee:ff",
-                                    wifiSsid = "SkyPrivilege_Staff",
-                                    wifiRssi = -60,
-                                    gpsLatitude = -6.1256,
-                                    gpsLongitude = 106.6558,
-                                    gpsAccuracy = 12.5f
-                                )
-                            ).onSuccess {
-                                isChecklistSubmitting = false
-                                checklistConfirmed = true
-                                showChecklistDialog = false
+                            ticketRepo.verifyTicket(
+                                barcodeData = barcodeData,
+                                imageBase64 = imageBase64,
+                                outletId = outletId,
+                                cashierId = cashierId,
+                                deviceId = 1L,
+                                shiftId = activeShiftId,
+                                checklistConfirmed = true,
+                                latitude = -6.1256,
+                                longitude = 106.6558,
+                                accuracy = 15.0f,
+                                wifiBssid = "aa:bb:cc:dd:ee:ff",
+                                wifiSsid = "SkyPrivilege_Staff"
+                            ).onSuccess { ticket ->
+                                isVerifyingTicket = false
+                                showCameraScanDialog = false
+                                verifiedTicket = ticket
+                                barcodeInput = barcodeData.orEmpty()
+                                redemptionSuccessMsg = null
+                                showTicketValidDialog = true
                             }.onFailure { err ->
-                                isChecklistSubmitting = false
-                                globalError = "Gagal merekam audit checklist: ${err.message}"
-                                showChecklistDialog = false
+                                isVerifyingTicket = false
+                                showCameraScanDialog = false
+                                ticketInvalidError = err.message ?: "Tiket tidak valid atau melanggar aturan Anti-Fraud"
+                                showTicketInvalidDialog = true
+                            }
+                        }
+                    }
+                )
+            }
+
+            if (showTicketInvalidDialog && ticketInvalidError != null) {
+                TicketInvalidWarningDialog(
+                    errorMessage = ticketInvalidError!!,
+                    onDismiss = {
+                        showTicketInvalidDialog = false
+                        ticketInvalidError = null
+                        checklistConfirmed = false
+                    }
+                )
+            }
+
+            if (showTicketValidDialog && verifiedTicket != null) {
+                TicketValidResultDialog(
+                    ticket = verifiedTicket!!,
+                    discountFormatted = "Rp 25.000",
+                    isClaiming = isClaimingDiscount,
+                    redemptionSuccessMsg = redemptionSuccessMsg,
+                    onDismiss = {
+                        showTicketValidDialog = false
+                        if (redemptionSuccessMsg != null) {
+                            checklistConfirmed = false
+                            verifiedTicket = null
+                            barcodeInput = ""
+                            redemptionSuccessMsg = null
+                        }
+                    },
+                    onApplyToMoka = {
+                        val t = verifiedTicket!!
+                        isClaimingDiscount = true
+                        coroutineScope.launch {
+                            val orderId = "ORD-" + (System.currentTimeMillis() % 100000)
+                            val amountCents = 2_500_000L // Rp 25.000
+
+                            redemptionRepo.requestClaimToken(
+                                orderId = orderId,
+                                pnrHash = t.canonicalHash.orEmpty(),
+                                outletId = outletId,
+                                cashierId = cashierId,
+                                amountCents = amountCents,
+                                signals = com.skyprivilege.domain.model.LocationContext(
+                                    gps = com.skyprivilege.domain.model.GpsCoordinate(
+                                        latitude = -6.1256,
+                                        longitude = 106.6558,
+                                        accuracyMeters = 15f,
+                                        isMock = false
+                                    ),
+                                    wifi = com.skyprivilege.domain.model.WifiContext(
+                                        bssid = "aa:bb:cc:dd:ee:ff",
+                                        ssid = "SkyPrivilege_Staff",
+                                        rssiDbm = -60
+                                    ),
+                                    deviceIntegrity = com.skyprivilege.domain.model.DeviceIntegrityContext(
+                                        deviceRecognition = "MEETS_BASIC_INTEGRITY",
+                                        isRooted = false,
+                                        isEmulator = false
+                                    )
+                                )
+                            ).onSuccess { token ->
+                                claimToken = token
+                                redemptionRepo.submitRedemption(
+                                    com.skyprivilege.domain.model.RedemptionClaim(
+                                        ticket = t,
+                                        orderId = orderId,
+                                        outletId = outletId,
+                                        cashierId = cashierId,
+                                        amountCents = amountCents,
+                                        claimToken = token,
+                                        shiftId = activeShiftId
+                                    )
+                                ).onSuccess { redId ->
+                                    isClaimingDiscount = false
+                                    redemptionSuccessMsg = "Klaim Berhasil! ID Transaksi: #$redId (Diskon Rp 25.000 sukses diinjeksi ke Moka POS Order: $orderId)"
+                                    refreshRedemptions()
+                                }.onFailure { claimErr ->
+                                    isClaimingDiscount = false
+                                    globalError = "Klaim gagal: ${claimErr.message}"
+                                }
+                            }.onFailure { tokenErr ->
+                                isClaimingDiscount = false
+                                globalError = "Otorisasi token gagal: ${tokenErr.message}"
                             }
                         }
                     }
@@ -1462,6 +1615,7 @@ fun ScanTabContent(
     isClaiming: Boolean,
     redemptionSuccessMsg: String?,
     onOpenChecklist: () -> Unit,
+    onOpenCamera: () -> Unit,
     onVerifyTicket: () -> Unit,
     onClaimDiscount: (Ticket) -> Unit,
     onResetScan: () -> Unit
@@ -1552,6 +1706,18 @@ fun ScanTabContent(
                         fontSize = 14.sp,
                         color = SlateDark
                     )
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // Dedicated Camera Button
+                    Button(
+                        onClick = onOpenCamera,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF005BAC)),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Text("📷 Buka Kamera & Foto Tiket", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    }
+
                     Spacer(modifier = Modifier.height(8.dp))
 
                     // Quick Sample Button

@@ -55,6 +55,64 @@ class TicketRepositoryImpl(
         }
     }
 
+    override suspend fun verifyTicket(
+        barcodeData: String?,
+        imageBase64: String?,
+        outletId: Long,
+        cashierId: Long?,
+        deviceId: Long?,
+        shiftId: Long?,
+        checklistConfirmed: Boolean,
+        latitude: Double?,
+        longitude: Double?,
+        accuracy: Float?,
+        wifiBssid: String?,
+        wifiSsid: String?
+    ): Result<Ticket> {
+        return runCatching {
+            val httpResponse = httpClient.post("/api/v1/tickets/verify") {
+                contentType(ContentType.Application.Json)
+                setBody(
+                    VerifyTicketRequest(
+                        barcodeData = barcodeData,
+                        imageBase64 = imageBase64,
+                        outletId = outletId,
+                        cashierId = cashierId,
+                        deviceId = deviceId,
+                        shiftId = shiftId,
+                        checklistConfirmed = checklistConfirmed,
+                        latitude = latitude,
+                        longitude = longitude,
+                        accuracy = accuracy,
+                        wifiBssid = wifiBssid,
+                        wifiSsid = wifiSsid
+                    )
+                )
+            }
+
+            val body = json.decodeFromString<VerifyTicketResponse>(httpResponse.bodyAsText())
+            if (body.success && body.valid && body.ticket != null) {
+                val t = body.ticket
+                Ticket(
+                    passengerName = t.passengerName.orEmpty(),
+                    pnr = t.pnr.orEmpty(),
+                    fromAirport = t.fromAirport.orEmpty(),
+                    toAirport = t.toAirport.orEmpty(),
+                    operatingCarrier = t.operatingCarrier.orEmpty(),
+                    flightNumber = t.flightNumber.orEmpty(),
+                    flightDate = t.flightDate.orEmpty(),
+                    compartmentCode = t.compartmentCode.orEmpty(),
+                    seatNumber = t.seatNumber.orEmpty(),
+                    checkInSequence = t.checkInSequence.orEmpty(),
+                    canonicalHash = body.pnrHash,
+                    isValid = t.valid
+                )
+            } else {
+                throw IllegalStateException(body.error ?: "Tiket tidak valid atau gagal diverifikasi")
+            }
+        }
+    }
+
     override suspend fun decodeOffline(rawBarcode: String): Result<Ticket> {
         return Result.failure(UnsupportedOperationException("Offline decoding not implemented on client"))
     }

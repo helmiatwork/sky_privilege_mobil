@@ -5,8 +5,18 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class VerifyTicketRequest(
-    @SerialName("barcode_data") val barcodeData: String,
-    @SerialName("outlet_id") val outletId: Long
+    @SerialName("barcode_data") val barcodeData: String? = null,
+    @SerialName("image_base64") val imageBase64: String? = null,
+    @SerialName("outlet_id") val outletId: Long,
+    @SerialName("cashier_id") val cashierId: Long? = null,
+    @SerialName("device_id") val deviceId: Long? = null,
+    @SerialName("shift_id") val shiftId: Long? = null,
+    @SerialName("checklist_confirmed") val checklistConfirmed: Boolean = false,
+    @SerialName("latitude") val latitude: Double? = null,
+    @SerialName("longitude") val longitude: Double? = null,
+    @SerialName("accuracy") val accuracy: Float? = null,
+    @SerialName("wifi_bssid") val wifiBssid: String? = null,
+    @SerialName("wifi_ssid") val wifiSsid: String? = null
 )
 
 @Serializable
@@ -27,7 +37,10 @@ data class ParsedTicketDto(
 @Serializable
 data class VerifyTicketResponse(
     val success: Boolean,
+    val valid: Boolean = false,
     @SerialName("pnr_hash") val pnrHash: String? = null,
     val ticket: ParsedTicketDto? = null,
-    val error: String? = null
+    val error: String? = null,
+    val message: String? = null,
+    @SerialName("reason_code") val reasonCode: String? = null
 )
