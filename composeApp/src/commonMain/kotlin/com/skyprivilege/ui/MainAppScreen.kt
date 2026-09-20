@@ -266,30 +266,36 @@ fun MainAppScreen(
     }
 
     var isHomeLoading by remember { mutableStateOf(false) }
+    val homeRefreshController = remember { PullRefreshController() }
 
     fun refreshHome() {
-        isHomeLoading = true
         coroutineScope.launch {
-            shiftRepo.getCurrentShift(cashierId, outletId).onSuccess { res ->
-                if (res.success && res.shift != null) {
-                    activeShiftId = res.shift.id
-                    shiftStatusText = "Shift #${res.shift.id} Aktif (Total Klaim: ${res.shift.totalRedemptionsCount})"
+            homeRefreshController.refresh {
+                isHomeLoading = true
+                try {
+                    shiftRepo.getCurrentShift(cashierId, outletId).onSuccess { res ->
+                        if (res.success && res.shift != null) {
+                            activeShiftId = res.shift.id
+                            shiftStatusText = "Shift #${res.shift.id} Aktif (Total Klaim: ${res.shift.totalRedemptionsCount})"
+                        }
+                    }
+                    attendanceRepo.getTodayAttendance(cashierId, outletId).onSuccess { res ->
+                        if (res.success) {
+                            todayAttendance = res.attendance
+                            hasCheckedIn = res.hasCheckedIn
+                            hasCheckedOut = res.hasCheckedOut
+                        }
+                    }
+                    redemptionRepo.getRedemptions(cashierId, todayOnly = true).onSuccess { list ->
+                        redemptionHistoryList = list
+                    }
+                    profileRepo.getProfile(cashierId).onSuccess { prof ->
+                        cashierProfile = prof
+                    }
+                } finally {
+                    isHomeLoading = false
                 }
             }
-            attendanceRepo.getTodayAttendance(cashierId, outletId).onSuccess { res ->
-                if (res.success) {
-                    todayAttendance = res.attendance
-                    hasCheckedIn = res.hasCheckedIn
-                    hasCheckedOut = res.hasCheckedOut
-                }
-            }
-            redemptionRepo.getRedemptions(cashierId, todayOnly = true).onSuccess { list ->
-                redemptionHistoryList = list
-            }
-            profileRepo.getProfile(cashierId).onSuccess { prof ->
-                cashierProfile = prof
-            }
-            isHomeLoading = false
         }
     }
 
