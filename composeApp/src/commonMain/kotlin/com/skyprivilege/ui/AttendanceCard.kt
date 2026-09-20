@@ -223,19 +223,22 @@ fun AttendanceCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
+            val hasCheckOut = (!checkOutTime.isNullOrBlank() && checkOutTime != "--:--") || status == "completed"
             // Action Buttons
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Record Time Button (Orange Primary)
+                // Record Time Button (Orange Primary or Slate when completed)
                 Button(
                     onClick = onRecordTimeClick,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEA580C)),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (hasCheckOut) Color(0xFF64748B) else Color(0xFFEA580C)
+                    ),
                     modifier = Modifier.weight(1.2f)
                 ) {
                     Text(
-                        text = "📍 Record Time",
+                        text = if (hasCheckOut) "📍 Shift Selesai" else "📍 Record Time",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold
                     )

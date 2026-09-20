@@ -56,6 +56,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.skyprivilege.data.remote.KtorClientFactory
 import com.skyprivilege.data.remote.dto.AttendanceRecordDto
 import com.skyprivilege.data.remote.dto.AuthenticityAcknowledgmentDto
@@ -212,6 +213,24 @@ fun MainAppScreen(
     var showTicketValidDialog by remember { mutableStateOf(false) }
     var capturedPhotoBase64 by remember { mutableStateOf<String?>(null) }
 
+    // Shift gating alert dialogs
+    var showShiftNotStartedDialog by remember { mutableStateOf(false) }
+    var showShiftCompletedDialog by remember { mutableStateOf(false) }
+
+    val isCheckedIn = (todayAttendance?.checkInAt != null && todayAttendance?.checkInAt != "--:--") ||
+                      (todayAttendance?.startTime != null && todayAttendance?.startTime != "--:--") ||
+                      todayAttendance?.status in listOf("present", "late", "completed") ||
+                      hasCheckedIn
+
+    val isCheckedOut = (todayAttendance?.checkOutAt != null && todayAttendance?.checkOutAt != "--:--") ||
+                       (todayAttendance?.endTime != null && todayAttendance?.endTime != "--:--") ||
+                       todayAttendance?.status == "completed" ||
+                       hasCheckedOut
+
+    val isShiftActive = isCheckedIn && !isCheckedOut
+    val isShiftCompleted = isCheckedOut
+    val isShiftNotStarted = !isCheckedIn && !isCheckedOut
+
     // History data
     var redemptionHistoryList by remember { mutableStateOf<List<RedemptionHistoryItem>>(emptyList()) }
     var isRedemptionsLoading by remember { mutableStateOf(false) }
@@ -333,6 +352,20 @@ fun MainAppScreen(
         }
     }
 
+    fun onAttemptScan() {
+        when {
+            isShiftCompleted -> {
+                showShiftCompletedDialog = true
+            }
+            isShiftNotStarted -> {
+                showShiftNotStartedDialog = true
+            }
+            else -> {
+                startScanFlow()
+            }
+        }
+    }
+
     // Initial Load
     LaunchedEffect(httpClient) {
         shiftRepo.getCurrentShift(cashierId, outletId).onSuccess { res ->
@@ -408,7 +441,7 @@ fun MainAppScreen(
                 currentTab = currentTab,
                 onTabSelected = { tab ->
                     if (tab == AppTab.SCAN) {
-                        startScanFlow()
+                        onAttemptScan()
                     } else {
                         currentTab = tab
                         if (tab == AppTab.HISTORY) refreshRedemptions()
@@ -495,10 +528,12 @@ fun MainAppScreen(
                             activeShiftId = activeShiftId,
                             shiftStatusText = shiftStatusText,
                             todayAttendance = todayAttendance,
+                            hasCheckedIn = hasCheckedIn,
+                            hasCheckedOut = hasCheckedOut,
                             recentRedemptions = todayRedemptions.take(1),
                             isRefreshing = isHomeLoading,
                             onRefresh = { refreshHome() },
-                            onNavigateToScan = { startScanFlow() },
+                            onNavigateToScan = { onAttemptScan() },
                             onNavigateToHistory = {
                                 currentTab = AppTab.HISTORY
                                 refreshRedemptions()
@@ -524,6 +559,7 @@ fun MainAppScreen(
                         // User requirement: "halaman ini g perlu, kalau scan gagal balik ke home aja"
                         LaunchedEffect(Unit) {
                             currentTab = AppTab.HOME
+                            onAttemptScan()
                         }
                     }
 
@@ -919,6 +955,157 @@ fun MainAppScreen(
                     onDismiss = { selectedRedemptionDetail = null }
                 )
             }
+
+            if (showShiftNotStartedDialog) {
+                Dialog(
+                    onDismissRequest = { showShiftNotStartedDialog = false },
+                    properties = DialogProperties(usePlatformDefaultWidth = false)
+                ) {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth(0.88f)
+                            .clip(RoundedCornerShape(20.dp)),
+                        color = Color.White,
+                        shadowElevation = 16.dp
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(20.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(52.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(0xFFFEF3C7)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text("⚠️", fontSize = 26.sp)
+                            }
+
+                            Spacer(modifier = Modifier.height(14.dp))
+
+                            Text(
+                                text = "Shift Belum Dibuka",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp,
+                                color = Color(0xFF0F172A)
+                            )
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Text(
+                                text = "Silakan lakukan Absensi Masuk (Check-in) terlebih dahulu sebelum dapat memindai tiket atau melakukan transaksi.",
+                                fontSize = 12.sp,
+                                color = Color(0xFF475569),
+                                textAlign = TextAlign.Center,
+                                lineHeight = 18.sp
+                            )
+
+                            Spacer(modifier = Modifier.height(20.dp))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                OutlinedButton(
+                                    onClick = { showShiftNotStartedDialog = false },
+                                    modifier = Modifier.weight(1f),
+                                    shape = RoundedCornerShape(10.dp)
+                                ) {
+                                    Text("Batal", fontSize = 12.sp)
+                                }
+
+                                Button(
+                                    onClick = {
+                                        showShiftNotStartedDialog = false
+                                        currentTab = AppTab.ABSEN
+                                        showGpsAttendanceDialog = true
+                                    },
+                                    modifier = Modifier.weight(1.4f),
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF005BAC)),
+                                    shape = RoundedCornerShape(10.dp)
+                                ) {
+                                    Text(
+                                        text = "Buka Absen GPS",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (showShiftCompletedDialog) {
+                Dialog(
+                    onDismissRequest = { showShiftCompletedDialog = false },
+                    properties = DialogProperties(usePlatformDefaultWidth = false)
+                ) {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth(0.88f)
+                            .clip(RoundedCornerShape(20.dp)),
+                        color = Color.White,
+                        shadowElevation = 16.dp
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(20.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(52.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(0xFFFEF2F2)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text("🔒", fontSize = 26.sp)
+                            }
+
+                            Spacer(modifier = Modifier.height(14.dp))
+
+                            Text(
+                                text = "Shift Hari Ini Telah Selesai",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp,
+                                color = Color(0xFF0F172A)
+                            )
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            val checkOutFormatted = todayAttendance?.checkOutAt?.let {
+                                if (it.length >= 16) it.substring(11, 16) else it
+                            } ?: todayAttendance?.endTime ?: "--:--"
+
+                            Text(
+                                text = "Anda telah melakukan check-out pada $checkOutFormatted WIB.\n\nAplikasi dinonaktifkan dari transaksi baru sampai shift kerja berikutnya besok.",
+                                fontSize = 12.sp,
+                                color = Color(0xFF475569),
+                                textAlign = TextAlign.Center,
+                                lineHeight = 18.sp
+                            )
+
+                            Spacer(modifier = Modifier.height(20.dp))
+
+                            Button(
+                                onClick = { showShiftCompletedDialog = false },
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF334155)),
+                                shape = RoundedCornerShape(10.dp)
+                            ) {
+                                Text(
+                                    text = "Mengerti",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -933,6 +1120,8 @@ fun HomeTabContent(
     activeShiftId: Long?,
     shiftStatusText: String,
     todayAttendance: AttendanceRecordDto?,
+    hasCheckedIn: Boolean = false,
+    hasCheckedOut: Boolean = false,
     recentRedemptions: List<RedemptionHistoryItem>,
     isRefreshing: Boolean = false,
     onRefresh: () -> Unit = {},
@@ -946,6 +1135,20 @@ fun HomeTabContent(
     onOpenEmergencyVoucher: () -> Unit = {},
     onOpenSop: () -> Unit = {}
 ) {
+    val isCheckedIn = (todayAttendance?.checkInAt != null && todayAttendance?.checkInAt != "--:--") ||
+                      (todayAttendance?.startTime != null && todayAttendance?.startTime != "--:--") ||
+                      todayAttendance?.status in listOf("present", "late", "completed") ||
+                      hasCheckedIn
+
+    val isCheckedOut = (todayAttendance?.checkOutAt != null && todayAttendance?.checkOutAt != "--:--") ||
+                       (todayAttendance?.endTime != null && todayAttendance?.endTime != "--:--") ||
+                       todayAttendance?.status == "completed" ||
+                       hasCheckedOut
+
+    val isShiftActive = isCheckedIn && !isCheckedOut
+    val isShiftCompleted = isCheckedOut
+    val isShiftNotStarted = !isCheckedIn && !isCheckedOut
+
     SkyPullRefreshBox(
         refreshing = isRefreshing,
         onRefresh = onRefresh,
@@ -999,55 +1202,98 @@ fun HomeTabContent(
             }
         }
 
-        // Quick Status & Shift Card (BCA Style Clean White Card)
-        item {
-            Card(
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-                            Text("Status Operasional Kasir", fontSize = 11.sp, color = Color(0xFF64748B), fontWeight = FontWeight.Medium)
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = if (activeShiftId != null) "Shift #$activeShiftId Aktif" else "Shift Belum Dibuka",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp,
-                                color = if (activeShiftId != null) Color(0xFF005BAC) else Color(0xFFE11D48)
-                            )
-                        }
+        // Quick Status & Shift Card (Adaptive to Shift Attendance State)
+        // User rule: "kalau udah checkin otomatis itu hilang, kalau sudah checkout aplikasi ga bisa di gunakan"
+        if (isShiftNotStarted) {
+            item {
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text("Status Operasional Kasir", fontSize = 11.sp, color = Color(0xFF64748B), fontWeight = FontWeight.Medium)
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "Shift Belum Dibuka",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp,
+                                    color = Color(0xFFE11D48)
+                                )
+                            }
 
-                        val badgeInfo = when (todayAttendance?.status) {
-                            "completed" -> Triple("SELESAI", Color(0xFFDCFCE7), Color(0xFF15803D))
-                            "present" -> Triple("HADIR", Color(0xFFDBEAFE), Color(0xFF1D4ED8))
-                            "late" -> Triple("TERLAMBAT", Color(0xFFFEF3C7), Color(0xFFB45309))
-                            else -> null
-                        }
-                        if (badgeInfo != null) {
                             Box(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(6.dp))
-                                    .background(badgeInfo.second)
+                                    .background(Color(0xFFFFE4E6))
                                     .padding(horizontal = 8.dp, vertical = 4.dp)
                             ) {
-                                Text(badgeInfo.first, color = badgeInfo.third, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                Text("BELUM CHECK-IN", color = Color(0xFFBE123C), fontSize = 10.sp, fontWeight = FontWeight.Bold)
                             }
                         }
-                    }
 
-                    Spacer(modifier = Modifier.height(10.dp))
-                    Text(
-                        text = todayAttendance?.checkInAt?.let { "Jam Masuk Hari Ini: ${if (it.length >= 16) it.substring(11, 16) else it} WIB" } ?: "Silakan lakukan Absensi GPS saat memulai shift kerja.",
-                        fontSize = 11.sp,
-                        color = Color(0xFF475569)
-                    )
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Text(
+                            text = "Silakan lakukan Absensi Masuk (Check-in) pada tab Absen saat memulai shift kerja.",
+                            fontSize = 11.sp,
+                            color = Color(0xFF475569)
+                        )
+                    }
+                }
+            }
+        } else if (isShiftCompleted) {
+            item {
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC)),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFCBD5E1)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text("🔒", fontSize = 14.sp)
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "Shift Hari Ini Telah Selesai",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp,
+                                    color = Color(0xFF334155)
+                                )
+                            }
+
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(Color(0xFFE2E8F0))
+                                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                            ) {
+                                Text("SELESAI", color = Color(0xFF475569), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+                        val checkOutFormatted = todayAttendance?.checkOutAt?.let {
+                            if (it.length >= 16) it.substring(11, 16) else it
+                        } ?: todayAttendance?.endTime ?: "--:--"
+                        Text(
+                            text = "Check-out tercatat pada $checkOutFormatted WIB. Seluruh fungsi transaksi dan scan dinonaktifkan sampai shift hari berikutnya.",
+                            fontSize = 11.sp,
+                            color = Color(0xFF64748B)
+                        )
+                    }
                 }
             }
         }
