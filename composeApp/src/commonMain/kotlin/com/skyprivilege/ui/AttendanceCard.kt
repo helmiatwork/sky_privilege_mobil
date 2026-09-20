@@ -86,26 +86,28 @@ fun AttendanceCard(
                     )
                 }
 
-                // Status Badge
-                val (badgeBg, badgeText, badgeColor) = when (status) {
+                // Status Badge (Omit if belum absen)
+                val badgeInfo = when (status) {
                     "completed" -> Triple(Color(0xFFDCFCE7), "SELESAI", Color(0xFF15803D))
                     "present" -> Triple(Color(0xFFDBEAFE), "HADIR", Color(0xFF1D4ED8))
                     "late" -> Triple(Color(0xFFFEF3C7), "TERLAMBAT", Color(0xFFB45309))
-                    else -> Triple(Color(0xFFF1F5F9), "BELUM ABSEN", Color(0xFF64748B))
+                    else -> null
                 }
 
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(badgeBg)
-                        .padding(horizontal = 8.dp, vertical = 4.dp)
-                ) {
-                    Text(
-                        text = badgeText,
-                        color = badgeColor,
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                if (badgeInfo != null) {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(badgeInfo.first)
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = badgeInfo.second,
+                            color = badgeInfo.third,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
 

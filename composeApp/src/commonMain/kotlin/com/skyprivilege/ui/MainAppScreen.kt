@@ -632,7 +632,8 @@ fun MainAppScreen(
                     clientIp = "192.168.1.45",
                     currentDateText = "Sabtu, 19 September 2026",
                     currentTimeText = "08:15:30 WIB",
-                    suggestedType = if (hasCheckedIn && !hasCheckedOut) "check_out" else "check_in",
+                    checkInTime = todayAttendance?.checkInAt?.let { if (it.length >= 16) it.substring(11, 16) else it } ?: todayAttendance?.startTime,
+                    checkOutTime = todayAttendance?.checkOutAt?.let { if (it.length >= 16) it.substring(11, 16) else it } ?: todayAttendance?.endTime,
                     latitude = -6.1256,
                     longitude = 106.6558,
                     accuracyMeters = 15.0f,
@@ -654,8 +655,12 @@ fun MainAppScreen(
                                 isAttendanceSubmitting = false
                                 showGpsAttendanceDialog = false
                                 todayAttendance = res.attendance
-                                if (res.action == "check_in") hasCheckedIn = true
-                                if (res.action == "check_out") hasCheckedOut = true
+                                if (res.action == "check_in" || type == "check_in") {
+                                    hasCheckedIn = true
+                                }
+                                if (res.action == "check_out" || type == "check_out") {
+                                    hasCheckedOut = true
+                                }
                                 attendanceSuccessToast = res.message ?: "Absensi GPS berhasil dicatat"
                                 refreshAttendances()
                             }.onFailure { err ->
@@ -882,19 +887,21 @@ fun HomeTabContent(
                             )
                         }
 
-                        val (statusText, statusBg, statusCol) = when (todayAttendance?.status) {
+                        val badgeInfo = when (todayAttendance?.status) {
                             "completed" -> Triple("SELESAI", Color(0xFFDCFCE7), Color(0xFF15803D))
                             "present" -> Triple("HADIR", Color(0xFFDBEAFE), Color(0xFF1D4ED8))
                             "late" -> Triple("TERLAMBAT", Color(0xFFFEF3C7), Color(0xFFB45309))
-                            else -> Triple("BELUM ABSEN", Color(0xFFF1F5F9), Color(0xFF64748B))
+                            else -> null
                         }
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(statusBg)
-                                .padding(horizontal = 8.dp, vertical = 4.dp)
-                        ) {
-                            Text(statusText, color = statusCol, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                        if (badgeInfo != null) {
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(badgeInfo.second)
+                                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                            ) {
+                                Text(badgeInfo.first, color = badgeInfo.third, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                            }
                         }
                     }
 
@@ -1745,8 +1752,8 @@ fun AbsenTabContent(
                 cashierRole = "Staff Kasir & Operator POS",
                 shiftInfo = "Shift Pagi (06:00 - 15:00)",
                 todayText = "Sabtu, 19 Sep 2026",
-                checkInTime = todayAttendance?.checkInAt?.let { if (it.length >= 16) it.substring(11, 16) else it },
-                checkOutTime = todayAttendance?.checkOutAt?.let { if (it.length >= 16) it.substring(11, 16) else it },
+                checkInTime = todayAttendance?.checkInAt?.let { if (it.length >= 16) it.substring(11, 16) else it } ?: todayAttendance?.startTime,
+                checkOutTime = todayAttendance?.checkOutAt?.let { if (it.length >= 16) it.substring(11, 16) else it } ?: todayAttendance?.endTime,
                 status = todayAttendance?.status,
                 onRecordTimeClick = onOpenRecordTime,
                 onCorrectionClick = onOpenCorrection

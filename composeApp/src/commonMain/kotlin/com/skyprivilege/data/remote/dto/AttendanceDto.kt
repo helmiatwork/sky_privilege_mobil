@@ -15,12 +15,14 @@ data class RecordAttendanceRequest(
 
 @Serializable
 data class AttendanceRecordDto(
-    val id: Long,
-    @SerialName("cashier_id") val cashierId: Long,
-    @SerialName("outlet_id") val outletId: Long,
-    val date: String,
+    val id: Long? = null,
+    @SerialName("cashier_id") val cashierId: Long? = null,
+    @SerialName("outlet_id") val outletId: Long? = null,
+    val date: String? = null,
     @SerialName("check_in_at") val checkInAt: String? = null,
     @SerialName("check_out_at") val checkOutAt: String? = null,
+    @SerialName("start_time") val startTime: String? = null,
+    @SerialName("end_time") val endTime: String? = null,
     val status: String? = null,
     @SerialName("duration_minutes") val durationMinutes: Int = 0,
     @SerialName("check_in_latitude") val checkInLatitude: Double? = null,
