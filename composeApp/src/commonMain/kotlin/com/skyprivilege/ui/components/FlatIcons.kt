@@ -31,7 +31,8 @@ enum class FlatIconType {
     CHECKLIST,
     VOUCHER_TICKET,
     HISTORY_CLOCK,
-    BOOK_SOP
+    BOOK_SOP,
+    GARUDA_LOGO
 }
 
 fun getTabIcon(tab: AppTab): FlatIconType {
@@ -759,5 +760,88 @@ fun FlatAirplaneIcon(
             close()
         }
         drawPath(planePath, color = tint, style = Fill)
+    }
+}
+
+/**
+ * Modern flat vector silhouette of the Garuda Indonesia eagle/wing emblem.
+ * Features stylized curved wing feathers and aerodynamic flight lines.
+ */
+@Composable
+fun FlatGarudaLogo(
+    modifier: Modifier = Modifier,
+    tint: Color? = null,
+    size: Dp = 48.dp
+) {
+    Canvas(modifier = modifier.size(size)) {
+        val w = this.size.width
+        val h = this.size.height
+
+        val primaryTint = tint ?: Color.White
+        val secondaryTint = tint ?: Color(0xFF38BDF8)
+        val tertiaryTint = tint ?: Color(0xFF7DD3FC)
+
+        // Feather 1 (Topmost longest curved wing feather)
+        val feather1 = Path().apply {
+            moveTo(w * 0.28f, h * 0.46f)
+            cubicTo(w * 0.38f, h * 0.28f, w * 0.62f, h * 0.12f, w * 0.94f, h * 0.12f)
+            cubicTo(w * 0.72f, h * 0.22f, w * 0.48f, h * 0.36f, w * 0.36f, h * 0.50f)
+            close()
+        }
+        drawPath(feather1, color = primaryTint, style = Fill)
+
+        // Feather 2 (Second upper feather)
+        val feather2 = Path().apply {
+            moveTo(w * 0.24f, h * 0.54f)
+            cubicTo(w * 0.36f, h * 0.38f, w * 0.60f, h * 0.26f, w * 0.88f, h * 0.26f)
+            cubicTo(w * 0.68f, h * 0.34f, w * 0.44f, h * 0.46f, w * 0.32f, h * 0.58f)
+            close()
+        }
+        drawPath(feather2, color = secondaryTint, style = Fill)
+
+        // Feather 3 (Third middle feather)
+        val feather3 = Path().apply {
+            moveTo(w * 0.20f, h * 0.62f)
+            cubicTo(w * 0.32f, h * 0.48f, w * 0.54f, h * 0.38f, w * 0.80f, h * 0.40f)
+            cubicTo(w * 0.60f, h * 0.48f, w * 0.40f, h * 0.58f, w * 0.28f, h * 0.66f)
+            close()
+        }
+        drawPath(feather3, color = primaryTint, style = Fill)
+
+        // Feather 4 (Fourth lower feather)
+        val feather4 = Path().apply {
+            moveTo(w * 0.18f, h * 0.70f)
+            cubicTo(w * 0.30f, h * 0.58f, w * 0.48f, h * 0.50f, w * 0.72f, h * 0.54f)
+            cubicTo(w * 0.54f, h * 0.60f, w * 0.36f, h * 0.68f, w * 0.24f, h * 0.74f)
+            close()
+        }
+        drawPath(feather4, color = tertiaryTint, style = Fill)
+
+        // Feather 5 (Bottom subtle wing tip)
+        val feather5 = Path().apply {
+            moveTo(w * 0.20f, h * 0.78f)
+            cubicTo(w * 0.30f, h * 0.68f, w * 0.44f, h * 0.64f, w * 0.62f, h * 0.68f)
+            cubicTo(w * 0.48f, h * 0.72f, w * 0.34f, h * 0.76f, w * 0.24f, h * 0.82f)
+            close()
+        }
+        drawPath(feather5, color = primaryTint, style = Fill)
+
+        // Eagle Head, Crown & Beak
+        val headAndBody = Path().apply {
+            moveTo(w * 0.06f, h * 0.58f)
+            lineTo(w * 0.16f, h * 0.50f)
+            cubicTo(w * 0.18f, h * 0.44f, w * 0.24f, h * 0.42f, w * 0.28f, h * 0.46f)
+            cubicTo(w * 0.22f, h * 0.56f, w * 0.16f, h * 0.64f, w * 0.08f, h * 0.64f)
+            lineTo(w * 0.06f, h * 0.58f)
+            close()
+        }
+        drawPath(headAndBody, color = primaryTint, style = Fill)
+
+        // Eye dot accent
+        drawCircle(
+            color = if (primaryTint == Color.White) Color(0xFF005BAC) else Color.White,
+            radius = w * 0.02f,
+            center = Offset(w * 0.18f, h * 0.48f)
+        )
     }
 }

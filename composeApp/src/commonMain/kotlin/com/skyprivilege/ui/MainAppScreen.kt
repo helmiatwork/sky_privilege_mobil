@@ -69,6 +69,7 @@ import com.skyprivilege.data.remote.dto.CashierProfileDto
 import com.skyprivilege.data.repository.ProfileRepositoryImpl
 import com.skyprivilege.ui.components.FlatAbsenIcon
 import com.skyprivilege.ui.components.FlatAirplaneIcon
+import com.skyprivilege.ui.components.FlatGarudaLogo
 import com.skyprivilege.ui.components.FlatGpsPinIcon
 import com.skyprivilege.ui.components.FlatHomeIcon
 import com.skyprivilege.ui.components.FlatLogoutIcon
@@ -901,7 +902,7 @@ fun HomeTabContent(
             }
         }
 
-        // Promo Banner Card (BCA Blue Elegant Style)
+        // Promo Banner Card (BCA Blue Elegant Style with Airline Logo)
         item {
             Card(
                 shape = RoundedCornerShape(16.dp),
@@ -913,6 +914,7 @@ fun HomeTabContent(
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    // Sisi Kiri Kartu: Teks Promo & Chip Maskapai
                     Column(modifier = Modifier.weight(1f)) {
                         Box(
                             modifier = Modifier
@@ -927,19 +929,48 @@ fun HomeTabContent(
                             text = "Diskon Rp 25.000 / Tiket",
                             color = Color.White,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp
+                            fontSize = 15.sp
                         )
-                        Spacer(modifier = Modifier.height(2.dp))
+                        Spacer(modifier = Modifier.height(3.dp))
                         Text(
-                            text = "Garuda, Citilink & Lion Group di Sky Lounge T3 CGK",
-                            color = Color.White.copy(alpha = 0.85f),
+                            text = "Garuda Indonesia & Partner di Sky Lounge T3 CGK",
+                            color = Color.White.copy(alpha = 0.9f),
                             fontSize = 11.sp
                         )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        // Chip Maskapai
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(Color(0xFF0D3268).copy(alpha = 0.7f))
+                                .border(0.5.dp, Color(0xFF38BDF8).copy(alpha = 0.5f), RoundedCornerShape(6.dp))
+                                .padding(horizontal = 8.dp, vertical = 3.dp)
+                        ) {
+                            Text(
+                                text = "Maskapai: Garuda Indonesia (GA)",
+                                color = Color(0xFF38BDF8),
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
                     }
-                    FlatAirplaneIcon(
-                        tint = Color.White.copy(alpha = 0.9f),
-                        size = 32.dp
-                    )
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    // Sisi Kanan Kartu: Container Logo Maskapai
+                    Box(
+                        modifier = Modifier
+                            .size(72.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(Color.White.copy(alpha = 0.12f))
+                            .border(1.dp, Color.White.copy(alpha = 0.25f), RoundedCornerShape(16.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        FlatGarudaLogo(
+                            tint = Color.White,
+                            size = 56.dp
+                        )
+                    }
                 }
             }
         }
