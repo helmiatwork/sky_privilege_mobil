@@ -30,6 +30,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -51,16 +52,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 
-data class SelectedTicketData(
-    val barcodeData: String? = null,
-    val imageBase64: String? = null,
-    val previewLabel: String,
-    val passengerName: String,
-    val flightNumber: String,
-    val flightDate: String,
-    val isSimulationInvalid: Boolean = false
-)
-
 @Composable
 fun TicketCameraDialog(
     cashierName: String = "Kasir Terminal 3 (CSH-001)",
@@ -70,24 +61,9 @@ fun TicketCameraDialog(
     onDismiss: () -> Unit,
     onSubmitTicket: (barcodeData: String?, imageBase64: String?) -> Unit
 ) {
-    // Current date calculations for sample barcodes
-    val todayDate = "2026-09-20"
-    // Julian day for 20 Sep is approx 263
-    val todayJulian = "263"
-    val validSampleBarcode = "M1SANTOSO/BUDI MR     EABC1234CGKDPSGA 00410${todayJulian}Y012A00042100"
-    val expiredSampleBarcode = "M1DOE/JOHN MR         EABC1234CGKDPSGA 00402255Y012A00042100" // 5 days earlier
-    val redeemedSampleBarcode = "M1TEST/ANDHIKA         EABC1234CGKDPSGA 0410${todayJulian}Y012A00042100"
-
-    var selectedTicket by remember {
-        mutableStateOf<SelectedTicketData?>(
-            SelectedTicketData(
-                barcodeData = validSampleBarcode,
-                previewLabel = "Boarding Pass Fisik GA410 (Terdeteksi)",
-                passengerName = "SANTOSO/BUDI MR",
-                flightNumber = "GA410 (CGK -> DPS)",
-                flightDate = todayDate
-            )
-        )
+    // Current default scanned barcode (simulates CameraX live feed detection)
+    var scannedBarcode by remember {
+        mutableStateOf("M1SANTOSO/BUDI MR     EABC1234CGKDPSGA 00410263Y012A00042100")
     }
 
     val infiniteTransition = rememberInfiniteTransition()
@@ -252,149 +228,30 @@ fun TicketCameraDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
-                // Ticket Selection / Quick Simulation Options for Testing
-                Text(
-                    text = "Pilih / Ambil Foto Tiket:",
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF334155)
+                // Clean Barcode / Scan Field
+                OutlinedTextField(
+                    value = scannedBarcode,
+                    onValueChange = { scannedBarcode = it },
+                    label = { Text("Barcode Boarding Pass (Otomatis Terdeteksi)", fontSize = 11.sp) },
+                    placeholder = { Text("Arahkan kamera atau masukkan string BCBP...") },
+                    singleLine = true,
+                    textStyle = androidx.compose.ui.text.TextStyle(
+                        fontSize = 11.sp,
+                        fontFamily = FontFamily.Monospace
+                    ),
+                    modifier = Modifier.fillMaxWidth()
                 )
 
                 Spacer(modifier = Modifier.height(6.dp))
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(5.dp)
-                ) {
-                    Button(
-                        onClick = {
-                            selectedTicket = SelectedTicketData(
-                                barcodeData = validSampleBarcode,
-                                previewLabel = "Boarding Pass Fisik Garuda GA410 (Sah)",
-                                passengerName = "SANTOSO/BUDI MR",
-                                flightNumber = "GA410 (CGK -> DPS)",
-                                flightDate = todayDate
-                            )
-                        },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (selectedTicket?.barcodeData == validSampleBarcode)
-                                Color(0xFF005BAC) else Color(0xFFF1F5F9)
-                        ),
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Text(
-                            text = "⚡ Valid",
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = if (selectedTicket?.barcodeData == validSampleBarcode)
-                                Color.White else Color(0xFF334155)
-                        )
-                    }
-
-                    OutlinedButton(
-                        onClick = {
-                            selectedTicket = SelectedTicketData(
-                                barcodeData = expiredSampleBarcode,
-                                previewLabel = "Tiket Kedaluwarsa 5 Hari Lalu (Uji Tolak)",
-                                passengerName = "DOE/JOHN MR",
-                                flightNumber = "GA402 (CGK -> DPS)",
-                                flightDate = "2026-09-15",
-                                isSimulationInvalid = true
-                            )
-                        },
-                        modifier = Modifier.weight(1.1f),
-                        shape = RoundedCornerShape(8.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            containerColor = if (selectedTicket?.barcodeData == expiredSampleBarcode)
-                                Color(0xFFFEE2E2) else Color.Transparent
-                        )
-                    ) {
-                        Text(
-                            text = "⚠️ Kedaluwarsa",
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFFDC2626)
-                        )
-                    }
-
-                    OutlinedButton(
-                        onClick = {
-                            selectedTicket = SelectedTicketData(
-                                barcodeData = redeemedSampleBarcode,
-                                previewLabel = "Tiket Pernah Diklaim (Uji Double Claim)",
-                                passengerName = "TEST/ANDHIKA",
-                                flightNumber = "SGA410 (CGK -> DPS)",
-                                flightDate = todayDate,
-                                isSimulationInvalid = true
-                            )
-                        },
-                        modifier = Modifier.weight(1.2f),
-                        shape = RoundedCornerShape(8.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            containerColor = if (selectedTicket?.barcodeData == redeemedSampleBarcode)
-                                Color(0xFFFEF3C7) else Color.Transparent
-                        )
-                    ) {
-                        Text(
-                            text = "♻️ Pernah Dipakai",
-                            fontSize = 9.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFFB45309)
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                // Selected Ticket Preview Card
-                if (selectedTicket != null) {
-                    val ticket = selectedTicket!!
-                    Card(
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (ticket.isSimulationInvalid) Color(0xFFFFF1F2) else Color(0xFFF8FAFC)
-                        ),
-                        border = androidx.compose.foundation.BorderStroke(
-                            1.dp,
-                            if (ticket.isSimulationInvalid) Color(0xFFFECDD3) else Color(0xFFE2E8F0)
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(modifier = Modifier.padding(12.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = ticket.previewLabel,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (ticket.isSimulationInvalid) Color(0xFFBE123C) else Color(0xFF0F172A)
-                                )
-                                Text(
-                                    text = ticket.flightDate,
-                                    fontSize = 10.sp,
-                                    color = Color(0xFF64748B)
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = "Penumpang: ${ticket.passengerName}",
-                                fontSize = 11.sp,
-                                color = Color(0xFF334155)
-                            )
-                            Text(
-                                text = "Penerbangan: ${ticket.flightNumber}",
-                                fontSize = 11.sp,
-                                color = Color(0xFF334155)
-                            )
-                        }
-                    }
-                }
+                Text(
+                    text = "Arahkan kamera ke tiket fisik/digital. Anti-Fraud Engine backend otomatis memvalidasi keabsahan tiket.",
+                    fontSize = 10.sp,
+                    color = Color(0xFF64748B),
+                    lineHeight = 14.sp
+                )
 
                 if (errorMessage != null) {
                     Spacer(modifier = Modifier.height(8.dp))
@@ -423,12 +280,12 @@ fun TicketCameraDialog(
 
                     Button(
                         onClick = {
-                            if (selectedTicket != null) {
-                                onSubmitTicket(selectedTicket!!.barcodeData, selectedTicket!!.imageBase64)
+                            if (scannedBarcode.isNotBlank()) {
+                                onSubmitTicket(scannedBarcode.trim(), null)
                             }
                         },
                         modifier = Modifier.weight(1.8f),
-                        enabled = !isVerifying && selectedTicket != null,
+                        enabled = !isVerifying && scannedBarcode.isNotBlank(),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color(0xFF005BAC)
                         ),
@@ -437,10 +294,10 @@ fun TicketCameraDialog(
                         if (isVerifying) {
                             CircularProgressIndicator(modifier = Modifier.size(16.dp), color = Color.White)
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Memverifikasi...", fontSize = 12.sp)
+                            Text("Memeriksa...", fontSize = 12.sp)
                         } else {
                             Text(
-                                text = "Kirim ke Backend",
+                                text = "📷 Pindai & Periksa Tiket",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold
                             )

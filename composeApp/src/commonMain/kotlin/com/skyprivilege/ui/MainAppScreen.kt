@@ -526,9 +526,21 @@ fun MainAppScreen(
                                     ).onSuccess { ticket ->
                                         verifiedTicket = ticket
                                         isVerifyingTicket = false
+                                        showTicketValidDialog = true
                                     }.onFailure { err ->
-                                        globalError = "Verifikasi tiket gagal: ${err.message}"
                                         isVerifyingTicket = false
+                                        if (err is TicketVerificationException) {
+                                            ticketInvalidError = err.message
+                                            ticketInvalidRedeemedAt = err.redeemedAt
+                                            ticketInvalidRedeemedOutlet = err.redeemedOutlet
+                                            ticketInvalidRedeemedCashier = err.redeemedCashier
+                                        } else {
+                                            ticketInvalidError = err.message ?: "Tiket tidak valid atau melanggar aturan Anti-Fraud"
+                                            ticketInvalidRedeemedAt = null
+                                            ticketInvalidRedeemedOutlet = null
+                                            ticketInvalidRedeemedCashier = null
+                                        }
+                                        showTicketInvalidDialog = true
                                     }
                                 }
                             },
@@ -1738,20 +1750,7 @@ fun ScanTabContent(
                         Text("📷 Buka Kamera & Foto Tiket", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
                     }
 
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // Quick Sample Button
-                    Button(
-                        onClick = {
-                            onBarcodeInputChanged("M1SANTOSO/BUDI MR     EABC1234CGKDPSGA 00410262Y012A00042100")
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF1F5F9)),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("⚡ Isi Sampel Boarding Pass GA410 (Hari Ini)", fontSize = 11.sp, color = SlateDark)
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
 
                     OutlinedTextField(
                         value = barcodeInput,
