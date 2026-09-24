@@ -711,20 +711,21 @@ fun MainAppScreen(
                             redemptionSuccessMsg = null
                         }
                     },
-                    onApplyToMoka = {
+                    onApplyToMoka = { orderId, bagSize, wrapType, grossAmountCents, amountCents, netAmountCents ->
                         val t = verifiedTicket!!
                         val photoToSend = capturedPhotoBase64
                         isClaimingDiscount = true
                         coroutineScope.launch {
-                            val orderId = "ORD-" + (System.currentTimeMillis() % 100000)
-                            val amountCents = 2_500_000L // Rp 25.000
-
                             redemptionRepo.requestClaimToken(
                                 orderId = orderId,
                                 pnrHash = t.canonicalHash.orEmpty(),
                                 outletId = outletId,
                                 cashierId = cashierId,
                                 amountCents = amountCents,
+                                bagSize = bagSize,
+                                wrapType = wrapType,
+                                grossAmountCents = grossAmountCents,
+                                netAmountCents = netAmountCents,
                                 ticketPhotoData = photoToSend,
                                 signals = com.skyprivilege.domain.model.LocationContext(
                                     gps = com.skyprivilege.domain.model.GpsCoordinate(
@@ -755,13 +756,18 @@ fun MainAppScreen(
                                         amountCents = amountCents,
                                         claimToken = token,
                                         shiftId = activeShiftId,
-                                        ticketPhotoData = photoToSend
+                                        ticketPhotoData = photoToSend,
+                                        bagSize = bagSize,
+                                        wrapType = wrapType,
+                                        grossAmountCents = grossAmountCents,
+                                        netAmountCents = netAmountCents
                                     )
                                 ).onSuccess { redId ->
                                     isClaimingDiscount = false
                                     // ZERO-DISK: clear in-memory photo buffer immediately after transmission
                                     capturedPhotoBase64 = null
-                                    redemptionSuccessMsg = "Klaim Berhasil! ID Transaksi: #$redId (Diskon Rp 25.000 sukses diinjeksi ke Moka POS Order: $orderId)"
+                                    val netRp = formatRupiah(netAmountCents / 100)
+                                    redemptionSuccessMsg = "Klaim Berhasil! ID Transaksi: #$redId (Order $orderId: $bagSize/$wrapType, Net Rp $netRp)"
                                     refreshRedemptions()
                                 }.onFailure { claimErr ->
                                     isClaimingDiscount = false

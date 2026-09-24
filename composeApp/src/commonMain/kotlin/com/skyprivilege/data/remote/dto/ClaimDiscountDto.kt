@@ -12,7 +12,12 @@ data class ClaimDiscountRequest(
     @SerialName("cashier_id") val cashierId: Long,
     @SerialName("amount_cents") val amountCents: Long,
     val signals: LocationContext,
-    @SerialName("ticket_photo_data") val ticketPhotoData: String? = null
+    @SerialName("ticket_photo_data") val ticketPhotoData: String? = null,
+    @SerialName("bag_size") val bagSize: String = "M",
+    @SerialName("wrap_type") val wrapType: String = "standard",
+    @SerialName("payment_method") val paymentMethod: String = "qris",
+    @SerialName("gross_amount_cents") val grossAmountCents: Long = 6500000L,
+    @SerialName("net_amount_cents") val netAmountCents: Long = 4000000L
 )
 
 @Serializable

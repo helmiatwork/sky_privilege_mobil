@@ -34,7 +34,12 @@ data class SubmitRedemptionRequest(
     @SerialName("raw_pnr") val rawPnr: String? = null,
     @SerialName("shift_id") val shiftId: Long? = null,
     @SerialName("ticket_photo") val ticketPhoto: String? = null,
-    @SerialName("ticket_photo_data") val ticketPhotoData: String? = null
+    @SerialName("ticket_photo_data") val ticketPhotoData: String? = null,
+    @SerialName("bag_size") val bagSize: String = "M",
+    @SerialName("wrap_type") val wrapType: String = "standard",
+    @SerialName("payment_method") val paymentMethod: String = "qris",
+    @SerialName("gross_amount_cents") val grossAmountCents: Long = 6500000L,
+    @SerialName("net_amount_cents") val netAmountCents: Long = 4000000L
 )
 
 @Serializable
@@ -61,7 +66,10 @@ class RedemptionRepositoryImpl(
     private val httpClient: HttpClient
 ) : RedemptionRepository {
 
-    private val json = Json { ignoreUnknownKeys = true }
+    private val json = Json {
+        ignoreUnknownKeys = true
+        encodeDefaults = true
+    }
 
     override suspend fun requestClaimToken(
         orderId: String,
@@ -70,7 +78,12 @@ class RedemptionRepositoryImpl(
         cashierId: Long,
         amountCents: Long,
         signals: LocationContext,
-        ticketPhotoData: String?
+        ticketPhotoData: String?,
+        bagSize: String,
+        wrapType: String,
+        paymentMethod: String,
+        grossAmountCents: Long,
+        netAmountCents: Long
     ): Result<String> {
         return runCatching {
             val response = httpClient.post("/api/v1/redemptions/claim") {
@@ -83,7 +96,12 @@ class RedemptionRepositoryImpl(
                         cashierId = cashierId,
                         amountCents = amountCents,
                         signals = signals,
-                        ticketPhotoData = ticketPhotoData
+                        ticketPhotoData = ticketPhotoData,
+                        bagSize = bagSize,
+                        wrapType = wrapType,
+                        paymentMethod = paymentMethod,
+                        grossAmountCents = grossAmountCents,
+                        netAmountCents = netAmountCents
                     )
                 )
             }.body<ClaimDiscountResponse>()
@@ -114,7 +132,12 @@ class RedemptionRepositoryImpl(
                         rawPnr = claim.ticket.pnr,
                         shiftId = claim.shiftId,
                         ticketPhoto = claim.ticketPhoto,
-                        ticketPhotoData = claim.ticketPhotoData ?: claim.ticketPhoto
+                        ticketPhotoData = claim.ticketPhotoData ?: claim.ticketPhoto,
+                        bagSize = claim.bagSize,
+                        wrapType = claim.wrapType,
+                        paymentMethod = claim.paymentMethod,
+                        grossAmountCents = claim.grossAmountCents,
+                        netAmountCents = claim.netAmountCents
                     )
                 )
             }

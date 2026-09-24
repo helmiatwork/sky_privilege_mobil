@@ -15,7 +15,12 @@ interface RedemptionRepository {
         cashierId: Long,
         amountCents: Long,
         signals: LocationContext,
-        ticketPhotoData: String? = null
+        ticketPhotoData: String? = null,
+        bagSize: String = "M",
+        wrapType: String = "standard",
+        paymentMethod: String = "qris",
+        grossAmountCents: Long = 6500000L,
+        netAmountCents: Long = 4000000L
     ): Result<String>
 
     suspend fun submitRedemption(claim: RedemptionClaim): Result<String>
