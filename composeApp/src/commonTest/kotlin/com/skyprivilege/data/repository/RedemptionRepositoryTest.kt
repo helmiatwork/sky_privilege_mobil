@@ -256,4 +256,104 @@ class RedemptionRepositoryTest {
         assertTrue(result.isSuccess)
         assertEquals("888", result.getOrNull())
     }
+
+    @Test
+    fun testSubmitRedemptionIncludesBaggageWrappingFieldsInRequestBody() = runTest {
+        val mockEngine = MockEngine { request ->
+            assertEquals("/api/v1/redemptions", request.url.encodedPath)
+            val content = request.body as? io.ktor.http.content.OutgoingContent.ByteArrayContent
+            val bodyString = content?.bytes()?.decodeToString().orEmpty()
+            assertTrue(bodyString.contains("\"bag_size\":\"L\""))
+            assertTrue(bodyString.contains("\"wrap_type\":\"bubble\""))
+            assertTrue(bodyString.contains("\"payment_method\":\"cash\""))
+            assertTrue(bodyString.contains("\"gross_amount_cents\":9500000"))
+            assertTrue(bodyString.contains("\"net_amount_cents\":7000000"))
+            respond(
+                content = """
+                    {
+                        "success": true,
+                        "redemption_id": 777
+                    }
+                """.trimIndent(),
+                status = HttpStatusCode.OK,
+                headers = headersOf(HttpHeaders.ContentType, "application/json")
+            )
+        }
+
+        val client = HttpClient(mockEngine) {
+            install(ContentNegotiation) {
+                json(Json { ignoreUnknownKeys = true; encodeDefaults = true })
+            }
+        }
+
+        val repository = RedemptionRepositoryImpl(client)
+        val claim = RedemptionClaim(
+            ticket = sampleTicket,
+            orderId = "MOKA-1003",
+            outletId = 1L,
+            cashierId = 2L,
+            amountCents = 2500000L,
+            claimToken = "valid_token_xyz",
+            shiftId = 42L,
+            status = ClaimStatus.PENDING,
+            bagSize = "L",
+            wrapType = "bubble",
+            paymentMethod = "cash",
+            grossAmountCents = 9500000L,
+            netAmountCents = 7000000L
+        )
+
+        val result = repository.submitRedemption(claim)
+        assertTrue(result.isSuccess)
+        assertEquals("777", result.getOrNull())
+    }
+
+    @Test
+    fun testRequestClaimTokenIncludesBaggageWrappingFieldsInRequestBody() = runTest {
+        val mockEngine = MockEngine { request ->
+            assertEquals("/api/v1/redemptions/claim", request.url.encodedPath)
+            val content = request.body as? io.ktor.http.content.OutgoingContent.ByteArrayContent
+            val bodyString = content?.bytes()?.decodeToString().orEmpty()
+            assertTrue(bodyString.contains("\"bag_size\":\"M\""))
+            assertTrue(bodyString.contains("\"wrap_type\":\"standard\""))
+            assertTrue(bodyString.contains("\"payment_method\":\"qris\""))
+            assertTrue(bodyString.contains("\"gross_amount_cents\":6500000"))
+            assertTrue(bodyString.contains("\"net_amount_cents\":4000000"))
+            respond(
+                content = """
+                    {
+                        "success": true,
+                        "claim_token": "token_wrap_123",
+                        "expires_in": 120
+                    }
+                """.trimIndent(),
+                status = HttpStatusCode.OK,
+                headers = headersOf(HttpHeaders.ContentType, "application/json")
+            )
+        }
+
+        val client = HttpClient(mockEngine) {
+            install(ContentNegotiation) {
+                json(Json { ignoreUnknownKeys = true; encodeDefaults = true })
+            }
+        }
+
+        val repository = RedemptionRepositoryImpl(client)
+        val result = repository.requestClaimToken(
+            orderId = "ORD-456",
+            pnrHash = "hash456",
+            outletId = 1L,
+            cashierId = 2L,
+            amountCents = 2500000L,
+            signals = com.skyprivilege.domain.model.LocationContext(),
+            bagSize = "M",
+            wrapType = "standard",
+            paymentMethod = "qris",
+            grossAmountCents = 6500000L,
+            netAmountCents = 4000000L
+        )
+
+        assertTrue(result.isSuccess)
+        assertEquals("token_wrap_123", result.getOrNull())
+    }
 }
