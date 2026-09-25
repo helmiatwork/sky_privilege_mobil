@@ -1,6 +1,7 @@
 package com.skyprivilege.data.remote
 
 import io.ktor.client.HttpClient
+import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.request.header
@@ -17,6 +18,11 @@ object KtorClientFactory {
         authTokenProvider: (() -> String?)? = null
     ): HttpClient {
         return HttpClient {
+            install(HttpTimeout) {
+                requestTimeoutMillis = 60_000L
+                connectTimeoutMillis = 15_000L
+                socketTimeoutMillis = 60_000L
+            }
             install(ContentNegotiation) {
                 json(Json {
                     prettyPrint = true

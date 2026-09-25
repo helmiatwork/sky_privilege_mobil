@@ -53,7 +53,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 
 object TicketScanDefaults {
-    const val SAMPLE_DEMO_BARCODE = "M1SANTOSO/BUDI MR     EABC1234CGKDPSGA 00410263Y012A00042100"
+    const val SAMPLE_DEMO_BARCODE = "M1HERMAWAN/EKO MR     EXYZ7890CGKDPSGA 00410268Y014B00045100"
     const val DEFAULT_SHOW_DEMO_AFFORDANCE = false
 
     fun canSubmitBarcode(barcode: String?, isVerifying: Boolean): Boolean {
