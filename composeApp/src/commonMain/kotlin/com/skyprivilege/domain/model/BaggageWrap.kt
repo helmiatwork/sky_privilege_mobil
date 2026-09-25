@@ -33,12 +33,12 @@ enum class WrapType(
 }
 
 object BaggagePricingCalculator {
-    fun calculateGrossCents(bagSize: BaggageSize, wrapType: WrapType): Long {
-        return bagSize.priceCents + wrapType.extraPriceCents
+    fun calculateGrossCents(bagSize: BaggageSize, wrapType: WrapType, bagCount: Int = 1): Long {
+        return (bagSize.priceCents + wrapType.extraPriceCents) * bagCount
     }
 
-    fun calculateGrossRupiah(bagSize: BaggageSize, wrapType: WrapType): Long {
-        return bagSize.priceRupiah + wrapType.extraPriceRupiah
+    fun calculateGrossRupiah(bagSize: BaggageSize, wrapType: WrapType, bagCount: Int = 1): Long {
+        return (bagSize.priceRupiah + wrapType.extraPriceRupiah) * bagCount
     }
 
     fun calculateNetCents(grossCents: Long, discountCents: Long): Long {
