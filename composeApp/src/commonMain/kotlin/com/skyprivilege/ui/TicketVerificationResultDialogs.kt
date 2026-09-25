@@ -45,6 +45,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.skyprivilege.domain.model.BaggagePricingCalculator
 import com.skyprivilege.domain.model.BaggageSize
+import com.skyprivilege.domain.model.OrderIdGenerator
 import com.skyprivilege.domain.model.Ticket
 import com.skyprivilege.domain.model.WrapType
 
@@ -229,7 +230,7 @@ fun TicketValidResultDialog(
 ) {
     var selectedBagSize by remember { mutableStateOf(BaggageSize.fromCode(initialBagSize)) }
     var selectedWrapType by remember { mutableStateOf(WrapType.fromCode(initialWrapType)) }
-    val orderId = remember(ticket.canonicalHash) { "ORD-" + (System.currentTimeMillis() % 100000) }
+    val orderId = remember(ticket.canonicalHash) { OrderIdGenerator.generateOrderId() }
 
     val grossCents = BaggagePricingCalculator.calculateGrossCents(selectedBagSize, selectedWrapType)
     val grossRupiah = BaggagePricingCalculator.calculateGrossRupiah(selectedBagSize, selectedWrapType)

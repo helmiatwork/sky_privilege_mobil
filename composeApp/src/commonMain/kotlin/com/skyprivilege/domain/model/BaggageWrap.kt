@@ -49,3 +49,9 @@ object BaggagePricingCalculator {
         return maxOf(0L, grossRupiah - discountRupiah)
     }
 }
+
+object OrderIdGenerator {
+    fun generateOrderId(): String {
+        return "ORD-${kotlin.random.Random.nextLong(100_000_000L, 1_000_000_000L)}"
+    }
+}
