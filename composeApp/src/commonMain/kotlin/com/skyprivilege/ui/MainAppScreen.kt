@@ -854,7 +854,7 @@ fun MainAppScreen(
                                 correctionHistoryList.add(
                                     0,
                                     LocalCorrectionItem(
-                                        id = res.correctionRequest?.id ?: System.currentTimeMillis(),
+                                        id = res.correctionRequest?.id ?: kotlin.random.Random.nextLong(1_000_000L, 9_999_999L),
                                         targetDate = targetDate,
                                         correctionType = corrType.uppercase(),
                                         requestedTime = inTime ?: outTime ?: "--:--",
