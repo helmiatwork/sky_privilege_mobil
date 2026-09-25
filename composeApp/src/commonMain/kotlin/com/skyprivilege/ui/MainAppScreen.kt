@@ -622,7 +622,7 @@ fun MainAppScreen(
                     outletName = cashierProfile.outletName.orEmpty(),
                     isVerifying = isVerifyingTicket,
                     errorMessage = globalError,
-                    showDemoAffordance = false,
+                    showDemoAffordance = true,
                     onDismiss = {
                         showCameraScanDialog = false
                         capturedPhotoBase64 = null
