@@ -15,13 +15,14 @@ object KtorClientFactory {
         baseUrl: String = "http://10.0.2.2:3001",
         deviceId: String = "DEV-TABLET-001",
         outletId: Long = 2L,
-        authTokenProvider: (() -> String?)? = null
+        authTokenProvider: (() -> String?)? = null,
+        networkIface: String = "wifi"
     ): HttpClient {
         return HttpClient {
             install(HttpTimeout) {
-                requestTimeoutMillis = 60_000L
-                connectTimeoutMillis = 15_000L
-                socketTimeoutMillis = 60_000L
+                requestTimeoutMillis = 8_000L
+                connectTimeoutMillis = 8_000L
+                socketTimeoutMillis = 8_000L
             }
             install(ContentNegotiation) {
                 json(Json {
@@ -38,6 +39,7 @@ object KtorClientFactory {
                 header("X-Device-Id", deviceId)
                 header("X-Device-Token", deviceId)
                 header("X-Outlet-Id", outletId.toString())
+                header("X-Network-Iface", networkIface)
                 authTokenProvider?.invoke()?.let { token ->
                     header("Authorization", "Bearer $token")
                 }

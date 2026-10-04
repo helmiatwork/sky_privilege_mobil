@@ -37,7 +37,7 @@ fun SopGuidelineDialog(
         SopItem(
             title = "1. Verifikasi Barcode Tiket",
             description = "Pindai barcode/Aztec code pada boarding pass atau voucher digital. Pastikan nama penumpang dan tanggal penerbangan valid.",
-            icon = "📷"
+            icon = ""
         ),
         SopItem(
             title = "2. Checklist Keaslian Fisik",
@@ -47,7 +47,7 @@ fun SopGuidelineDialog(
         SopItem(
             title = "3. Absensi GPS Geofence",
             description = "Absensi masuk dan pulang wajib dilakukan di dalam radius outlet Sky Lounge CGK Terminal 3 dengan GPS akurat.",
-            icon = "📍"
+            icon = ""
         ),
         SopItem(
             title = "4. Buka & Tutup Shift",

@@ -22,7 +22,7 @@ class TicketPhotoTest {
             {
                 "id": 123,
                 "flight_number": "GA0410",
-                "passenger_name": "SANTOSO/BUDI MR",
+                "passenger_name": "PAX_SAMPLE_1",
                 "discount_amount": 25000.0,
                 "status": "approved",
                 "ticket_photo_url": "data:image/jpeg;base64,sample_photo_base64_stream"
@@ -34,7 +34,7 @@ class TicketPhotoTest {
 
         assertEquals(123L, item.id)
         assertEquals("GA0410", item.flightNumber)
-        assertEquals("SANTOSO/BUDI MR", item.passengerName)
+        assertEquals("PAX_SAMPLE_1", item.passengerName)
         assertEquals(25000.0, item.discountAmount)
         assertNotNull(item.ticketPhotoUrl)
         assertEquals("data:image/jpeg;base64,sample_photo_base64_stream", item.ticketPhotoUrl)
@@ -46,7 +46,7 @@ class TicketPhotoTest {
             {
                 "id": 124,
                 "flight_number": "GA0410",
-                "passenger_name": "SANTOSO/BUDI MR"
+                "passenger_name": "PAX_SAMPLE_1"
             }
         """.trimIndent()
 

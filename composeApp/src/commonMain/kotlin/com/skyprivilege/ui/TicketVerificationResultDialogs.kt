@@ -48,6 +48,8 @@ import com.skyprivilege.domain.model.BaggageSize
 import com.skyprivilege.domain.model.OrderIdGenerator
 import com.skyprivilege.domain.model.Ticket
 import com.skyprivilege.domain.model.WrapType
+import com.skyprivilege.pii.PiiMasker
+import com.skyprivilege.ui.components.FlatGpsPinIcon
 
 @Composable
 fun TicketInvalidWarningDialog(
@@ -140,7 +142,11 @@ fun TicketInvalidWarningDialog(
                             }
                             if (!redeemedOutlet.isNullOrBlank()) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text("📍 Lokasi", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF7F1D1D), modifier = Modifier.width(85.dp))
+                                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.width(85.dp)) {
+                                        FlatGpsPinIcon(tint = Color(0xFF7F1D1D), size = 12.dp)
+                                        Spacer(modifier = Modifier.width(3.dp))
+                                        Text("Lokasi", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF7F1D1D))
+                                    }
                                     Text(": $redeemedOutlet", fontSize = 11.sp, color = Color(0xFF1E293B), fontWeight = FontWeight.SemiBold)
                                 }
                                 Spacer(modifier = Modifier.height(5.dp))
@@ -317,7 +323,7 @@ fun TicketValidResultDialog(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(
-                                text = ticket.passengerName.ifBlank { "Penumpang Terverifikasi" },
+                                text = PiiMasker.maskName(ticket.passengerName).let { if (it == "-") "Penumpang Terverifikasi" else it },
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color(0xFF0F172A)

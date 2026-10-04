@@ -29,6 +29,6 @@ data class RedemptionClaim(
     @SerialName("bag_size") val bagSize: String = "M",
     @SerialName("wrap_type") val wrapType: String = "standard",
     @SerialName("payment_method") val paymentMethod: String = "qris",
-    @SerialName("gross_amount_cents") val grossAmountCents: Long = 6500000L,
-    @SerialName("net_amount_cents") val netAmountCents: Long = 4000000L
+    @SerialName("gross_amount_cents") val grossAmountCents: Long = 7_500_000L,
+    @SerialName("net_amount_cents") val netAmountCents: Long = 5_000_000L
 )

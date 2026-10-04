@@ -6,10 +6,10 @@ enum class BaggageSize(
     val priceRupiah: Long,
     val priceCents: Long
 ) {
-    S("S", "S", 50_000L, 5_000_000L),
-    M("M", "M", 65_000L, 6_500_000L),
-    L("L", "L", 80_000L, 8_000_000L),
-    XL("XL", "XL", 100_000L, 10_000_000L);
+    S("S", "S", 60_000L, 6_000_000L),
+    M("M", "M", 75_000L, 7_500_000L),
+    L("L", "L", 90_000L, 9_000_000L),
+    XL("XL", "XL", 120_000L, 12_000_000L);
 
     companion object {
         fun fromCode(code: String): BaggageSize =
@@ -24,7 +24,8 @@ enum class WrapType(
     val extraPriceCents: Long
 ) {
     STANDARD("standard", "Standard", 0L, 0L),
-    BUBBLE("bubble", "Bubble Wrap", 15_000L, 1_500_000L);
+    PREMIUM("premium", "Premium", 15_000L, 1_500_000L),
+    BUBBLE("bubble", "Bubble Wrap", 10_000L, 1_000_000L);
 
     companion object {
         fun fromCode(code: String): WrapType =

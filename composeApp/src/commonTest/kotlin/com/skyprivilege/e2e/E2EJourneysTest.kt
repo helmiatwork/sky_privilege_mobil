@@ -44,7 +44,7 @@ class E2EJourneysTest {
     }
 
     private val sampleTicket = Ticket(
-        passengerName = "PRATAMA/BUDI",
+        passengerName = "PAX_A",
         pnr = "GA9988",
         fromAirport = "CGK",
         toAirport = "DPS",
@@ -185,43 +185,43 @@ class E2EJourneysTest {
         val discountRupiah = 25_000L
         val discountCents = 2_500_000L
 
-        // Size S: 50.000 base
+        // Size S: 60.000 base
         val grossSStandard = BaggagePricingCalculator.calculateGrossRupiah(BaggageSize.S, WrapType.STANDARD)
         val grossSBubble = BaggagePricingCalculator.calculateGrossRupiah(BaggageSize.S, WrapType.BUBBLE)
-        assertEquals(50_000L, grossSStandard)
-        assertEquals(65_000L, grossSBubble)
-        assertEquals(25_000L, BaggagePricingCalculator.calculateNetRupiah(grossSStandard, discountRupiah))
-        assertEquals(40_000L, BaggagePricingCalculator.calculateNetRupiah(grossSBubble, discountRupiah))
+        assertEquals(60_000L, grossSStandard)
+        assertEquals(70_000L, grossSBubble)
+        assertEquals(35_000L, BaggagePricingCalculator.calculateNetRupiah(grossSStandard, discountRupiah))
+        assertEquals(45_000L, BaggagePricingCalculator.calculateNetRupiah(grossSBubble, discountRupiah))
 
-        // Size M: 65.000 base
+        // Size M: 75.000 base
         val grossMStandard = BaggagePricingCalculator.calculateGrossRupiah(BaggageSize.M, WrapType.STANDARD)
         val grossMBubble = BaggagePricingCalculator.calculateGrossRupiah(BaggageSize.M, WrapType.BUBBLE)
-        assertEquals(65_000L, grossMStandard)
-        assertEquals(80_000L, grossMBubble)
-        assertEquals(40_000L, BaggagePricingCalculator.calculateNetRupiah(grossMStandard, discountRupiah))
-        assertEquals(55_000L, BaggagePricingCalculator.calculateNetRupiah(grossMBubble, discountRupiah))
+        assertEquals(75_000L, grossMStandard)
+        assertEquals(85_000L, grossMBubble)
+        assertEquals(50_000L, BaggagePricingCalculator.calculateNetRupiah(grossMStandard, discountRupiah))
+        assertEquals(60_000L, BaggagePricingCalculator.calculateNetRupiah(grossMBubble, discountRupiah))
 
-        // Size L: 80.000 base
+        // Size L: 90.000 base
         val grossLStandard = BaggagePricingCalculator.calculateGrossRupiah(BaggageSize.L, WrapType.STANDARD)
         val grossLBubble = BaggagePricingCalculator.calculateGrossRupiah(BaggageSize.L, WrapType.BUBBLE)
-        assertEquals(80_000L, grossLStandard)
-        assertEquals(95_000L, grossLBubble)
-        assertEquals(55_000L, BaggagePricingCalculator.calculateNetRupiah(grossLStandard, discountRupiah))
-        assertEquals(70_000L, BaggagePricingCalculator.calculateNetRupiah(grossLBubble, discountRupiah))
+        assertEquals(90_000L, grossLStandard)
+        assertEquals(100_000L, grossLBubble)
+        assertEquals(65_000L, BaggagePricingCalculator.calculateNetRupiah(grossLStandard, discountRupiah))
+        assertEquals(75_000L, BaggagePricingCalculator.calculateNetRupiah(grossLBubble, discountRupiah))
 
-        // Size XL: 100.000 base
+        // Size XL: 120.000 base
         val grossXLStandard = BaggagePricingCalculator.calculateGrossRupiah(BaggageSize.XL, WrapType.STANDARD)
         val grossXLBubble = BaggagePricingCalculator.calculateGrossRupiah(BaggageSize.XL, WrapType.BUBBLE)
-        assertEquals(100_000L, grossXLStandard)
-        assertEquals(115_000L, grossXLBubble)
-        assertEquals(75_000L, BaggagePricingCalculator.calculateNetRupiah(grossXLStandard, discountRupiah))
-        assertEquals(90_000L, BaggagePricingCalculator.calculateNetRupiah(grossXLBubble, discountRupiah))
+        assertEquals(120_000L, grossXLStandard)
+        assertEquals(130_000L, grossXLBubble)
+        assertEquals(95_000L, BaggagePricingCalculator.calculateNetRupiah(grossXLStandard, discountRupiah))
+        assertEquals(105_000L, BaggagePricingCalculator.calculateNetRupiah(grossXLBubble, discountRupiah))
 
         // Cents deterministic precision for Size L + Bubble Wrap
         val grossCentsLBubble = BaggagePricingCalculator.calculateGrossCents(BaggageSize.L, WrapType.BUBBLE)
         val netCentsLBubble = BaggagePricingCalculator.calculateNetCents(grossCentsLBubble, discountCents)
-        assertEquals(9_500_000L, grossCentsLBubble)
-        assertEquals(7_000_000L, netCentsLBubble)
+        assertEquals(10_000_000L, grossCentsLBubble)
+        assertEquals(7_500_000L, netCentsLBubble)
     }
 
     // =========================================================================
@@ -238,28 +238,28 @@ class E2EJourneysTest {
         val discountRupiah = 25_000L
         val discountCents = 2_500_000L
 
-        // Single bag M Standard: 65.000 Rp (6.500.000 cents)
+        // Single bag M Standard: 75.000 Rp (7.500.000 cents)
         val grossM1 = BaggagePricingCalculator.calculateGrossRupiah(BaggageSize.M, WrapType.STANDARD, bagCount = 1)
-        assertEquals(65_000L, grossM1)
+        assertEquals(75_000L, grossM1)
 
-        // 3 bags M Standard: 65.000 x 3 = 195.000 Rp (19.500.000 cents)
+        // 3 bags M Standard: 75.000 x 3 = 225.000 Rp (22.500.000 cents)
         val grossM3 = BaggagePricingCalculator.calculateGrossRupiah(BaggageSize.M, WrapType.STANDARD, bagCount = 3)
         val grossCentsM3 = BaggagePricingCalculator.calculateGrossCents(BaggageSize.M, WrapType.STANDARD, bagCount = 3)
-        assertEquals(195_000L, grossM3)
-        assertEquals(19_500_000L, grossCentsM3)
+        assertEquals(225_000L, grossM3)
+        assertEquals(22_500_000L, grossCentsM3)
         assertEquals(grossM1 * 3, grossM3)
 
         // Net calculation for 3 bags with 25k discount
         val netM3 = BaggagePricingCalculator.calculateNetRupiah(grossM3, discountRupiah)
         val netCentsM3 = BaggagePricingCalculator.calculateNetCents(grossCentsM3, discountCents)
-        assertEquals(170_000L, netM3)
-        assertEquals(17_000_000L, netCentsM3)
+        assertEquals(200_000L, netM3)
+        assertEquals(20_000_000L, netCentsM3)
 
-        // 3 bags L Bubble: (80.000 + 15.000) x 3 = 95.000 x 3 = 285.000 Rp (28.500.000 cents)
+        // 3 bags L Bubble: (90.000 + 10.000) x 3 = 100.000 x 3 = 300.000 Rp (30.000.000 cents)
         val grossLBubble3 = BaggagePricingCalculator.calculateGrossRupiah(BaggageSize.L, WrapType.BUBBLE, bagCount = 3)
         val grossCentsLBubble3 = BaggagePricingCalculator.calculateGrossCents(BaggageSize.L, WrapType.BUBBLE, bagCount = 3)
-        assertEquals(285_000L, grossLBubble3)
-        assertEquals(28_500_000L, grossCentsLBubble3)
+        assertEquals(300_000L, grossLBubble3)
+        assertEquals(30_000_000L, grossCentsLBubble3)
     }
 
     // =========================================================================

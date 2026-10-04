@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import com.skyprivilege.network.NetworkConnectivityManager
 import com.skyprivilege.ui.MainAppScreen
+import com.skyprivilege.ui.components.FlatShieldIcon
 
 class MainActivity : ComponentActivity() {
     private lateinit var connectivityManager: NetworkConnectivityManager
@@ -132,7 +133,7 @@ fun PermissionGatedApp() {
                         .background(Color(0xFF0D3268)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("🛡️", fontSize = 36.sp)
+                    FlatShieldIcon(tint = Color.White, size = 36.dp)
                 }
 
                 Spacer(modifier = Modifier.height(20.dp))
@@ -162,13 +163,13 @@ fun PermissionGatedApp() {
                 ) {
                     Column(modifier = Modifier.padding(18.dp)) {
                         PermissionRow(
-                            icon = "📍",
+                            icon = "",
                             title = "Lokasi Presisi (GPS)",
                             description = "Memastikan kasir bertugas di geofence outlet bandara yang sah & mencegah manipulasi shift."
                         )
                         Spacer(modifier = Modifier.height(14.dp))
                         PermissionRow(
-                            icon = "📷",
+                            icon = "",
                             title = "Kamera Scanner",
                             description = "Memindai barcode PDF417 boarding pass maskapai & verifikasi keaslian fisik tiket."
                         )

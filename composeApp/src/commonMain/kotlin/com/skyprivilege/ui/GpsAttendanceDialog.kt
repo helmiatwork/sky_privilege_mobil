@@ -223,7 +223,7 @@ fun GpsAttendanceDialog(
                             .padding(horizontal = 10.dp, vertical = 5.dp)
                     ) {
                         Text(
-                            text = "📍 CGK Terminal 3 Gate 13 ($latitude, $longitude)",
+                            text = "CGK Terminal 3 Gate 13 ($latitude, $longitude)",
                             color = Color(0xFF94A3B8),
                             fontSize = 10.sp,
                             fontFamily = FontFamily.Monospace

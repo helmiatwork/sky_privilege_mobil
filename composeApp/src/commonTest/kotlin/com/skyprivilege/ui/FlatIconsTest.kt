@@ -23,7 +23,7 @@ class FlatIconsTest {
     @Test
     fun testFlatIconTypesDefined() {
         val types = FlatIconType.values()
-        assertEquals(14, types.size)
+        assertEquals(15, types.size)
         assertNotNull(FlatIconType.HOME)
         assertNotNull(FlatIconType.TRANSACTION)
         assertNotNull(FlatIconType.SCAN)

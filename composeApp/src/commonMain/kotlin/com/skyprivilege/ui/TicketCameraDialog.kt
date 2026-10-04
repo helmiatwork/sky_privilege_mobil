@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.skyprivilege.ui.components.FlatCameraScanIcon
 
 object TicketScanDefaults {
     const val SAMPLE_DEMO_BARCODE = "M1HERMAWAN/EKO MR     EXYZ7890CGKDPSGA 00410268Y014B00045100"
@@ -211,7 +212,7 @@ fun TicketCameraDialog(
                             .padding(horizontal = 10.dp, vertical = 5.dp)
                     ) {
                         Text(
-                            text = "📍 GPS Geofence: Aktif (±15m) • 📶 Wi-Fi: SkyPrivilege_Staff",
+                            text = "GPS Geofence: Aktif (±15m) • Wi-Fi: SkyPrivilege_Staff",
                             color = Color(0xFF94A3B8),
                             fontSize = 10.sp,
                             fontFamily = FontFamily.Monospace
@@ -260,7 +261,7 @@ fun TicketCameraDialog(
                         horizontalArrangement = Arrangement.End
                     ) {
                         Text(
-                            text = "🧪 Isi Sampel Demo (Garuda GA410)",
+                            text = "Isi Sampel Demo (Garuda GA410)",
                             fontSize = 11.sp,
                             color = Color(0xFF0284C7),
                             fontWeight = FontWeight.Medium,
@@ -325,11 +326,18 @@ fun TicketCameraDialog(
                             Spacer(modifier = Modifier.width(6.dp))
                             Text("Memproses...", fontSize = 12.sp)
                         } else {
-                            Text(
-                                text = "📷 Ambil Foto Boarding Pass",
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                FlatCameraScanIcon(tint = Color.White, size = 16.dp)
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "Ambil Foto Boarding Pass",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                         }
                     }
                 }

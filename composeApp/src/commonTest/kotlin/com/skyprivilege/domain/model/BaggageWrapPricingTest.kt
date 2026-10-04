@@ -16,17 +16,17 @@ class BaggageWrapPricingTest {
 
     @Test
     fun testBaggageSizePricing() {
-        assertEquals(50_000L, BaggageSize.S.priceRupiah)
-        assertEquals(5_000_000L, BaggageSize.S.priceCents)
+        assertEquals(60_000L, BaggageSize.S.priceRupiah)
+        assertEquals(6_000_000L, BaggageSize.S.priceCents)
 
-        assertEquals(65_000L, BaggageSize.M.priceRupiah)
-        assertEquals(6_500_000L, BaggageSize.M.priceCents)
+        assertEquals(75_000L, BaggageSize.M.priceRupiah)
+        assertEquals(7_500_000L, BaggageSize.M.priceCents)
 
-        assertEquals(80_000L, BaggageSize.L.priceRupiah)
-        assertEquals(8_000_000L, BaggageSize.L.priceCents)
+        assertEquals(90_000L, BaggageSize.L.priceRupiah)
+        assertEquals(9_000_000L, BaggageSize.L.priceCents)
 
-        assertEquals(100_000L, BaggageSize.XL.priceRupiah)
-        assertEquals(10_000_000L, BaggageSize.XL.priceCents)
+        assertEquals(120_000L, BaggageSize.XL.priceRupiah)
+        assertEquals(12_000_000L, BaggageSize.XL.priceCents)
     }
 
     @Test
@@ -34,8 +34,11 @@ class BaggageWrapPricingTest {
         assertEquals(0L, WrapType.STANDARD.extraPriceRupiah)
         assertEquals(0L, WrapType.STANDARD.extraPriceCents)
 
-        assertEquals(15_000L, WrapType.BUBBLE.extraPriceRupiah)
-        assertEquals(1_500_000L, WrapType.BUBBLE.extraPriceCents)
+        assertEquals(15_000L, WrapType.PREMIUM.extraPriceRupiah)
+        assertEquals(1_500_000L, WrapType.PREMIUM.extraPriceCents)
+
+        assertEquals(10_000L, WrapType.BUBBLE.extraPriceRupiah)
+        assertEquals(1_000_000L, WrapType.BUBBLE.extraPriceCents)
     }
 
     @Test
@@ -43,52 +46,52 @@ class BaggageWrapPricingTest {
         val grossCents = BaggagePricingCalculator.calculateGrossCents(BaggageSize.M, WrapType.STANDARD)
         val netCents = BaggagePricingCalculator.calculateNetCents(grossCents, 2_500_000L)
 
-        assertEquals(6_500_000L, grossCents)
-        assertEquals(4_000_000L, netCents)
+        assertEquals(7_500_000L, grossCents)
+        assertEquals(5_000_000L, netCents)
     }
 
     @Test
     fun testBaggagePricingCalculatorSlide21ScenarioLargeStandard() {
-        // Slide 21 Pitch Deck: "Order Baggage Wrapping Rp 80.000, Promo discount -Rp 25.000, Total bayar Rp 55.000"
+        // Slide 21 Pitch Deck: "Order Baggage Wrapping Rp 90.000, Promo discount -Rp 25.000, Total bayar Rp 65.000"
         val grossRupiah = BaggagePricingCalculator.calculateGrossRupiah(BaggageSize.L, WrapType.STANDARD)
         val grossCents = BaggagePricingCalculator.calculateGrossCents(BaggageSize.L, WrapType.STANDARD)
         val netRupiah = BaggagePricingCalculator.calculateNetRupiah(grossRupiah, 25_000L)
         val netCents = BaggagePricingCalculator.calculateNetCents(grossCents, 2_500_000L)
 
-        assertEquals(80_000L, grossRupiah)
-        assertEquals(8_000_000L, grossCents)
-        assertEquals(55_000L, netRupiah)
-        assertEquals(5_500_000L, netCents)
+        assertEquals(90_000L, grossRupiah)
+        assertEquals(9_000_000L, grossCents)
+        assertEquals(65_000L, netRupiah)
+        assertEquals(6_500_000L, netCents)
     }
 
     @Test
     fun testBaggagePricingCalculatorMediumBubbleWrap() {
-        // Medium (65.000) + Bubble Wrap (15.000) = 80.000 gross, Net after 25.000 discount = 55.000
+        // Medium (75.000) + Bubble Wrap (10.000) = 85.000 gross, Net after 25.000 discount = 60.000
         val grossCents = BaggagePricingCalculator.calculateGrossCents(BaggageSize.M, WrapType.BUBBLE)
         val netCents = BaggagePricingCalculator.calculateNetCents(grossCents, 2_500_000L)
 
-        assertEquals(8_000_000L, grossCents)
-        assertEquals(5_500_000L, netCents)
+        assertEquals(8_500_000L, grossCents)
+        assertEquals(6_000_000L, netCents)
     }
 
     @Test
     fun testBaggagePricingCalculatorExtraLargeBubbleWrap() {
-        // XL (100.000) + Bubble (15.000) = 115.000 gross, Net after 25.000 discount = 90.000
+        // XL (120.000) + Bubble (10.000) = 130.000 gross, Net after 25.000 discount = 105.000
         val grossCents = BaggagePricingCalculator.calculateGrossCents(BaggageSize.XL, WrapType.BUBBLE)
         val netCents = BaggagePricingCalculator.calculateNetCents(grossCents, 2_500_000L)
 
-        assertEquals(11_500_000L, grossCents)
-        assertEquals(9_000_000L, netCents)
+        assertEquals(13_000_000L, grossCents)
+        assertEquals(10_500_000L, netCents)
     }
 
     @Test
     fun testBaggagePricingCalculatorSmallStandard() {
-        // S (50.000) + Standard (0) = 50.000 gross, Net after 25.000 discount = 25.000
+        // S (60.000) + Standard (0) = 60.000 gross, Net after 25.000 discount = 35.000
         val grossCents = BaggagePricingCalculator.calculateGrossCents(BaggageSize.S, WrapType.STANDARD)
         val netCents = BaggagePricingCalculator.calculateNetCents(grossCents, 2_500_000L)
 
-        assertEquals(5_000_000L, grossCents)
-        assertEquals(2_500_000L, netCents)
+        assertEquals(6_000_000L, grossCents)
+        assertEquals(3_500_000L, netCents)
     }
 
     @Test
@@ -105,21 +108,21 @@ class BaggageWrapPricingTest {
         assertEquals("M", request.bagSize)
         assertEquals("standard", request.wrapType)
         assertEquals("qris", request.paymentMethod)
-        assertEquals(6_500_000L, request.grossAmountCents)
-        assertEquals(4_000_000L, request.netAmountCents)
+        assertEquals(7_500_000L, request.grossAmountCents)
+        assertEquals(5_000_000L, request.netAmountCents)
 
         val encoded = json.encodeToString(request)
         assertTrue(encoded.contains("\"bag_size\":\"M\""))
         assertTrue(encoded.contains("\"wrap_type\":\"standard\""))
         assertTrue(encoded.contains("\"payment_method\":\"qris\""))
-        assertTrue(encoded.contains("\"gross_amount_cents\":6500000"))
-        assertTrue(encoded.contains("\"net_amount_cents\":4000000"))
+        assertTrue(encoded.contains("\"gross_amount_cents\":7500000"))
+        assertTrue(encoded.contains("\"net_amount_cents\":5000000"))
 
         val decoded = json.decodeFromString<ClaimDiscountRequest>(encoded)
         assertEquals("M", decoded.bagSize)
         assertEquals("standard", decoded.wrapType)
-        assertEquals(6_500_000L, decoded.grossAmountCents)
-        assertEquals(4_000_000L, decoded.netAmountCents)
+        assertEquals(7_500_000L, decoded.grossAmountCents)
+        assertEquals(5_000_000L, decoded.netAmountCents)
     }
 
     @Test
@@ -146,29 +149,29 @@ class BaggageWrapPricingTest {
         assertEquals("M", defaultClaim.bagSize)
         assertEquals("standard", defaultClaim.wrapType)
         assertEquals("qris", defaultClaim.paymentMethod)
-        assertEquals(6_500_000L, defaultClaim.grossAmountCents)
-        assertEquals(4_000_000L, defaultClaim.netAmountCents)
+        assertEquals(7_500_000L, defaultClaim.grossAmountCents)
+        assertEquals(5_000_000L, defaultClaim.netAmountCents)
 
         val customClaim = defaultClaim.copy(
             bagSize = "L",
             wrapType = "bubble",
             paymentMethod = "cash",
-            grossAmountCents = 9_500_000L,
-            netAmountCents = 7_000_000L
+            grossAmountCents = 10_000_000L,
+            netAmountCents = 7_500_000L
         )
 
         assertEquals("L", customClaim.bagSize)
         assertEquals("bubble", customClaim.wrapType)
         assertEquals("cash", customClaim.paymentMethod)
-        assertEquals(9_500_000L, customClaim.grossAmountCents)
-        assertEquals(7_000_000L, customClaim.netAmountCents)
+        assertEquals(10_000_000L, customClaim.grossAmountCents)
+        assertEquals(7_500_000L, customClaim.netAmountCents)
 
         val encoded = json.encodeToString(customClaim)
         val decoded = json.decodeFromString<RedemptionClaim>(encoded)
         assertEquals("L", decoded.bagSize)
         assertEquals("bubble", decoded.wrapType)
         assertEquals("cash", decoded.paymentMethod)
-        assertEquals(9_500_000L, decoded.grossAmountCents)
-        assertEquals(7_000_000L, decoded.netAmountCents)
+        assertEquals(10_000_000L, decoded.grossAmountCents)
+        assertEquals(7_500_000L, decoded.netAmountCents)
     }
 }

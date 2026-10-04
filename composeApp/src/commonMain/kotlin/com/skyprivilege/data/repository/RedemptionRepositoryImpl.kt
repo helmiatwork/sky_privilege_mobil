@@ -38,14 +38,31 @@ data class SubmitRedemptionRequest(
     @SerialName("bag_size") val bagSize: String = "M",
     @SerialName("wrap_type") val wrapType: String = "standard",
     @SerialName("payment_method") val paymentMethod: String = "qris",
-    @SerialName("gross_amount_cents") val grossAmountCents: Long = 6500000L,
-    @SerialName("net_amount_cents") val netAmountCents: Long = 4000000L
+    @SerialName("gross_amount_cents") val grossAmountCents: Long = 7_500_000L,
+    @SerialName("net_amount_cents") val netAmountCents: Long = 5_000_000L
 )
 
 @Serializable
 data class SubmitRedemptionResponse(
     val success: Boolean,
     @SerialName("redemption_id") val redemptionId: Long? = null,
+    val error: String? = null
+)
+
+@Serializable
+data class EmergencyVoucherRequest(
+    @SerialName("serial_number") val serialNumber: String,
+    val pnr: String,
+    @SerialName("supervisor_pin") val supervisorPin: String,
+    val reason: String,
+    @SerialName("cashier_id") val cashierId: Long,
+    @SerialName("outlet_id") val outletId: Long
+)
+
+@Serializable
+data class EmergencyVoucherResponse(
+    val success: Boolean,
+    val message: String? = null,
     val error: String? = null
 )
 
@@ -178,6 +195,35 @@ class RedemptionRepositoryImpl(
             }.body<VoidResponse>()
 
             response.success
+        }
+    }
+
+    override suspend fun issueEmergencyVoucher(
+        serialNumber: String,
+        pnr: String,
+        supervisorPin: String,
+        reason: String,
+        cashierId: Long,
+        outletId: Long
+    ): Result<String> {
+        return runCatching {
+            val response = httpClient.post("/api/v1/emergency_vouchers") {
+                contentType(ContentType.Application.Json)
+                setBody(EmergencyVoucherRequest(
+                    serialNumber = serialNumber,
+                    pnr = pnr,
+                    supervisorPin = supervisorPin,
+                    reason = reason,
+                    cashierId = cashierId,
+                    outletId = outletId
+                ))
+            }.body<EmergencyVoucherResponse>()
+
+            if (response.success) {
+                response.message ?: "Voucher Darurat #$serialNumber berhasil diterbitkan untuk PNR $pnr"
+            } else {
+                throw IllegalStateException(response.error ?: "Penerbitan voucher darurat gagal")
+            }
         }
     }
 

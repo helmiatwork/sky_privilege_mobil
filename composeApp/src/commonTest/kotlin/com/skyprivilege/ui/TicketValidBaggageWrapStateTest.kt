@@ -19,10 +19,10 @@ class TicketValidBaggageWrapStateTest {
         val netCents = BaggagePricingCalculator.calculateNetCents(grossCents, discountAmountCents)
 
         assertEquals("M", defaultSize.code)
-        assertEquals(65_000L, defaultSize.priceRupiah)
-        assertEquals(6_500_000L, grossCents)
-        assertEquals(4_000_000L, netCents)
-        assertEquals("40.000", formatRupiah(netCents / 100))
+        assertEquals(75_000L, defaultSize.priceRupiah)
+        assertEquals(7_500_000L, grossCents)
+        assertEquals(5_000_000L, netCents)
+        assertEquals("50.000", formatRupiah(netCents / 100))
     }
 
     @Test
@@ -39,12 +39,12 @@ class TicketValidBaggageWrapStateTest {
         val netRupiah = BaggagePricingCalculator.calculateNetRupiah(grossRupiah, discountRupiah)
         val netCents = BaggagePricingCalculator.calculateNetCents(grossCents, discountCents)
 
-        assertEquals(80_000L, grossRupiah)
-        assertEquals(8_000_000L, grossCents)
-        assertEquals(55_000L, netRupiah)
-        assertEquals(5_500_000L, netCents)
-        assertEquals("80.000", formatRupiah(grossRupiah))
-        assertEquals("55.000", formatRupiah(netRupiah))
+        assertEquals(90_000L, grossRupiah)
+        assertEquals(9_000_000L, grossCents)
+        assertEquals(65_000L, netRupiah)
+        assertEquals(6_500_000L, netCents)
+        assertEquals("90.000", formatRupiah(grossRupiah))
+        assertEquals("65.000", formatRupiah(netRupiah))
     }
 
     @Test
@@ -56,8 +56,8 @@ class TicketValidBaggageWrapStateTest {
         val grossCents = BaggagePricingCalculator.calculateGrossCents(sizeM, wrapBubble)
         val netCents = BaggagePricingCalculator.calculateNetCents(grossCents, discountCents)
 
-        assertEquals(8_000_000L, grossCents)
-        assertEquals(5_500_000L, netCents)
+        assertEquals(8_500_000L, grossCents)
+        assertEquals(6_000_000L, netCents)
     }
 
     @Test
@@ -65,15 +65,15 @@ class TicketValidBaggageWrapStateTest {
         val sizes = BaggageSize.entries
         assertEquals(4, sizes.size)
         assertEquals(listOf("S", "M", "L", "XL"), sizes.map { it.code })
-        assertEquals(listOf(50_000L, 65_000L, 80_000L, 100_000L), sizes.map { it.priceRupiah })
+        assertEquals(listOf(60_000L, 75_000L, 90_000L, 120_000L), sizes.map { it.priceRupiah })
     }
 
     @Test
     fun testAllWrapTypesAvailable() {
         val types = WrapType.entries
-        assertEquals(2, types.size)
-        assertEquals(listOf("standard", "bubble"), types.map { it.code })
-        assertEquals(listOf(0L, 15_000L), types.map { it.extraPriceRupiah })
+        assertEquals(3, types.size)
+        assertEquals(listOf("standard", "premium", "bubble"), types.map { it.code })
+        assertEquals(listOf(0L, 15_000L, 10_000L), types.map { it.extraPriceRupiah })
     }
 
     @Test

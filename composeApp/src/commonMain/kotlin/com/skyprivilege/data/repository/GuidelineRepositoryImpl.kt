@@ -8,17 +8,32 @@ import com.skyprivilege.domain.repository.GuidelineRepository
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
+import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
+import io.ktor.client.statement.HttpResponse
+import io.ktor.http.HttpStatusCode
 
 class GuidelineRepositoryImpl(
     private val httpClient: HttpClient
 ) : GuidelineRepository {
 
+    private var cachedETag: String? = null
+    private var cachedGuidelines: List<TicketGuideline>? = null
+
     override suspend fun getGuidelines(): Result<List<TicketGuideline>> {
         return runCatching {
-            val response = httpClient.get("/api/v1/guidelines").body<GuidelinesResponse>()
-            response.data.ifEmpty { response.guidelines }
+            val response: HttpResponse = httpClient.get("/api/v1/guidelines") {
+                cachedETag?.let { header("If-None-Match", it) }
+            }
+            if (response.status == HttpStatusCode.NotModified) {
+                return Result.success(cachedGuidelines ?: emptyList())
+            }
+            val body = response.body<GuidelinesResponse>()
+            cachedETag = response.headers["ETag"]
+            val guidelines = body.data.ifEmpty { body.guidelines }
+            cachedGuidelines = guidelines
+            guidelines
         }
     }
 

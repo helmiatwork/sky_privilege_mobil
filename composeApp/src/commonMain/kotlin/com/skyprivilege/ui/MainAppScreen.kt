@@ -75,14 +75,17 @@ import com.skyprivilege.domain.model.TicketGuideline
 import com.skyprivilege.domain.model.TicketVerificationException
 import com.skyprivilege.data.remote.dto.CashierProfileDto
 import com.skyprivilege.data.repository.ProfileRepositoryImpl
+import com.skyprivilege.pii.PiiMasker
 import com.skyprivilege.ui.components.FlatAbsenIcon
 import com.skyprivilege.ui.components.FlatAirplaneIcon
+import com.skyprivilege.ui.components.FlatCameraScanIcon
 import com.skyprivilege.ui.components.FlatGarudaLogo
 import com.skyprivilege.ui.components.FlatGpsPinIcon
 import com.skyprivilege.ui.components.FlatHomeIcon
 import com.skyprivilege.ui.components.FlatLogoutIcon
 import com.skyprivilege.ui.components.FlatProfileIcon
 import com.skyprivilege.ui.components.FlatScanIcon
+import com.skyprivilege.ui.components.FlatShieldIcon
 import com.skyprivilege.ui.components.FlatTransactionIcon
 import com.skyprivilege.ui.components.FlatVoucherTicketIcon
 import com.skyprivilege.ui.components.SkyPullRefreshBox
@@ -878,11 +881,20 @@ fun MainAppScreen(
                     onSubmit = { serial, pnr, pin, rsn ->
                         isEmergencySubmitting = true
                         coroutineScope.launch {
-                            // Local simulation for offline voucher issuance
-                            kotlinx.coroutines.delay(500)
+                            redemptionRepo.issueEmergencyVoucher(
+                                serialNumber = serial,
+                                pnr = pnr,
+                                supervisorPin = pin,
+                                reason = rsn,
+                                cashierId = cashierId,
+                                outletId = outletId
+                            ).onSuccess {
+                                attendanceSuccessToast = "Voucher Darurat #$serial berhasil diterbitkan untuk PNR $pnr"
+                            }.onFailure { err ->
+                                attendanceSuccessToast = "Gagal terbitkan voucher: ${err.message}"
+                            }
                             isEmergencySubmitting = false
                             showEmergencyDialog = false
-                            attendanceSuccessToast = "Voucher Darurat #$serial berhasil diterbitkan untuk PNR $pnr"
                         }
                     }
                 )
@@ -1964,12 +1976,19 @@ fun ScanTabContent(
                             .height(48.dp),
                         shape = RoundedCornerShape(10.dp)
                     ) {
-                        Text(
-                            text = "📷 Buka Kamera & Foto Tiket",
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            FlatCameraScanIcon(tint = Color.White, size = 16.dp)
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Buka Kamera & Foto Tiket",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(12.dp))
@@ -1983,7 +2002,7 @@ fun ScanTabContent(
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text("🛡️", fontSize = 12.sp)
+                                FlatShieldIcon(tint = Color(0xFF334155), size = 14.dp)
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
                                     text = "Kebijakan Anti-Fraud Vision AI:",
@@ -2021,7 +2040,7 @@ fun ScanTabContent(
                                     color = GrabGreenDark
                                 )
                                 Spacer(modifier = Modifier.height(6.dp))
-                                Text("Penumpang: ${t.passengerName}", fontSize = 12.sp, color = Color(0xFF14532D))
+                                Text("Penumpang: ${PiiMasker.maskName(t.passengerName)}", fontSize = 12.sp, color = Color(0xFF14532D))
                                 Text("PNR: ${t.pnr} | Penerbangan: ${t.flightNumber} (${t.fromAirport} -> ${t.toAirport})", fontSize = 12.sp, color = Color(0xFF14532D))
                                 Text("Tanggal: ${t.flightDate} | Kursi: ${t.seatNumber} | Kelas: ${t.compartmentCode}", fontSize = 12.sp, color = Color(0xFF14532D))
                                 Text(

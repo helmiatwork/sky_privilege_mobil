@@ -10,7 +10,7 @@ data class OpenShiftRequest(
     @SerialName("device_id") val deviceId: Long? = null,
     @SerialName("opening_cash") val openingCash: Double = 0.0,
     @SerialName("opening_selfie_key") val openingSelfieKey: String? = null,
-    @SerialName("auth_method_opened") val authMethodOpened: String = "face"
+    @SerialName("auth_method_opened") val authMethodOpened: String = "pin"
 )
 
 @Serializable

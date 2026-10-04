@@ -238,7 +238,7 @@ fun AttendanceCard(
                     modifier = Modifier.weight(1.2f)
                 ) {
                     Text(
-                        text = if (hasCheckOut) "📍 Shift Selesai" else "📍 Record Time",
+                        text = if (hasCheckOut) "Shift Selesai" else "Record Time",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold
                     )

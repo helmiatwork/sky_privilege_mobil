@@ -41,6 +41,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.skyprivilege.domain.model.RedemptionHistoryItem
+import com.skyprivilege.pii.PiiMasker
+import com.skyprivilege.ui.components.FlatCameraScanIcon
 
 @Composable
 fun RedemptionDetailDialog(
@@ -148,7 +150,7 @@ fun RedemptionDetailDialog(
                                 .clip(RoundedCornerShape(12.dp))
                         )
 
-                        // Top Badge: 📷 FOTO FISIK TIKET (GEOFENCE AUDITED)
+                        // Top Badge: FOTO FISIK TIKET (GEOFENCE AUDITED)
                         Box(
                             modifier = Modifier
                                 .align(Alignment.TopStart)
@@ -157,12 +159,11 @@ fun RedemptionDetailDialog(
                                 .background(Color(0xD90F172A))
                                 .padding(horizontal = 8.dp, vertical = 4.dp)
                         ) {
-                            Text(
-                                text = "📷 FOTO FISIK TIKET (GEOFENCE AUDITED)",
-                                color = Color(0xFF38BDF8),
-                                fontSize = 9.sp,
-                                fontWeight = FontWeight.Bold
-                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                FlatCameraScanIcon(tint = Color(0xFF38BDF8), size = 10.dp)
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("FOTO FISIK TIKET (GEOFENCE AUDITED)", color = Color(0xFF38BDF8), fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                            }
                         }
 
                         // Official outlet stamp overlay
@@ -229,7 +230,7 @@ fun RedemptionDetailDialog(
                                         fontWeight = FontWeight.SemiBold
                                     )
                                     Text(
-                                        text = item.passengerName.ifBlank { "SANTOSO/BUDI MR" },
+                                        text = PiiMasker.maskName(item.passengerName),
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = Color(0xFF0F172A)

@@ -32,7 +32,8 @@ enum class FlatIconType {
     VOUCHER_TICKET,
     HISTORY_CLOCK,
     BOOK_SOP,
-    GARUDA_LOGO
+    GARUDA_LOGO,
+    SHIELD
 }
 
 fun getTabIcon(tab: AppTab): FlatIconType {
@@ -760,6 +761,39 @@ fun FlatAirplaneIcon(
             close()
         }
         drawPath(planePath, color = tint, style = Fill)
+    }
+}
+
+/**
+ * Flat Shield with checkmark icon for security / permission displays.
+ */
+@Composable
+fun FlatShieldIcon(
+    modifier: Modifier = Modifier,
+    tint: Color = Color(0xFF005BAC),
+    size: Dp = 24.dp
+) {
+    Canvas(modifier = modifier.size(size)) {
+        val w = this.size.width
+        val h = this.size.height
+        val shieldPath = Path().apply {
+            moveTo(w * 0.50f, h * 0.05f)
+            lineTo(w * 0.90f, h * 0.22f)
+            cubicTo(w * 0.90f, h * 0.55f, w * 0.72f, h * 0.82f, w * 0.50f, h * 0.95f)
+            cubicTo(w * 0.28f, h * 0.82f, w * 0.10f, h * 0.55f, w * 0.10f, h * 0.22f)
+            close()
+        }
+        drawPath(shieldPath, color = tint, style = Fill)
+        val checkPath = Path().apply {
+            moveTo(w * 0.33f, h * 0.52f)
+            lineTo(w * 0.46f, h * 0.65f)
+            lineTo(w * 0.67f, h * 0.42f)
+        }
+        drawPath(
+            checkPath,
+            color = Color.White,
+            style = Stroke(width = h * 0.06f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+        )
     }
 }
 

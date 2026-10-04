@@ -94,6 +94,12 @@ class ShiftDtoTest {
     }
 
     @Test
+    fun testOpenShiftRequestDefaultAuthMethodIsPin() {
+        val request = OpenShiftRequest(cashierId = 1L, outletId = 2L)
+        assertEquals("pin", request.authMethodOpened)
+    }
+
+    @Test
     fun testCloseShiftWithZReportSerialization() {
         val responseJson = """
             {
