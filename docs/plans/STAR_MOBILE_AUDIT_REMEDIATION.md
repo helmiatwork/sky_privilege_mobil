@@ -3,56 +3,65 @@
 - **Target Repo**: `/Users/ichigo/Documents/repo/helmi/sky_privilege/mobile`
 - **Branch**: `feat/mobile-fable-opus-perfection`
 - **Auditors**: Claude Fable 5.1 & Claude Opus
-- **Status**: IMPLEMENTATION COMPLETE (Commit `60d6ecf`)
+- **Status**: ROUND 2 REMEDIATION (CHANGES_REQUESTED by Fable 5.1 & Opus)
 
 ---
 
 ## 1. Enhanced STAR Contract
 
 ### S — Situation & Regulatory Context
-Opus baseline and Fable 5.1 architecture audits identified critical discrepancies between legacy mobile code (27 Sep) and the bank-grade Master Plan (`PLAN.md` §2, 3 Oct):
-1. **UU PDP No. 27/2022 Statutory Breaches**:
-   - `ShiftDto` defaulted `authMethodOpened = "face"`, lacking lawful basis and DPIA approval (Ps. 20, 34).
-   - Plaintext passenger names leaked across DTOs and UI without masking (Ps. 16, 44).
-   - Human-name placeholders (`SANTOSO/BUDI MR`, `PRATAMA/BUDI`, `LESTARI/CITRA MS`) violated privacy standards.
-2. **Anti-Fraud & Operational Drift**:
-   - Baggage pricing hardcoded to obsolete seed (50/65/80/100k, missing PREMIUM, wrong BUBBLE surcharge).
-   - Emergency voucher simulated locally without server audit trail (`POST /api/v1/emergency_vouchers`).
-   - Ktor timeout set to 60s instead of strict-online 8s budget.
-   - Dual-SIM telemetry missing standardized `X-Network-Iface` header.
-   - UI littered with system emojis (🛡️, 📍, 📷, 🧪) instead of flat vector icons.
-   - Guideline sync lacked ETag conditional GET (`If-None-Match` / 304).
+Opus and Fable 5.1 dual review returned `CHANGES_REQUESTED` on the initial remediation diff:
+1. **UU PDP No. 27/2022 Ps. 16 & 44 Statutory Breaches**:
+   - `RedemptionHistoryItem.kt:13` & `VerifyTicketDto.kt:25`: DTOs still accept plaintext `passenger_name` and full `pnr_canonical_hash` from server, persisting PII in memory/logs.
+   - `PiiMaskerTest.kt:27`: still retains `"SANTOSO/BUDI MR"` (violating zero-human-name invariant).
+   - `PiiMasker.kt`: does not split on `/`, causing ICAO boarding pass names (`SURNAME/FIRST`) to format incorrectly.
+   - PNR plaintext leaks in toast `MainAppScreen.kt:892` and `RedemptionRepositoryImpl.kt:223`.
+2. **Anti-Fraud & Spoofed Telemetry (Critical)**:
+   - `MainAppScreen.kt:647-651,737-750` sends hardcoded mock GPS (`-6.1256, 106.6558`), mock accuracy `15.0`, and fake Wi-Fi BSSID/SSID, bypassing `MultiSignalScorer`.
+   - `RedemptionClaim.kt:21`: default `ticketPhoto` hardcodes a 1x1 transparent dummy pixel, creating false evidence if photo capture is omitted.
+   - `KeystoreSignerProvider` exists but is unwired (0 callers); requests lack `X-Device-Signature`, `X-Timestamp`, `X-Nonce`.
+3. **Architecture & Operational Integrity**:
+   - `GuidelineRepositoryImpl.kt:30`: returns `emptyList()` silently on 304 when cache is null (swallowing protocol errors).
+   - `KtorClientFactory.kt`: `X-Network-Iface` captured statically instead of dynamic provider; 8s timeout applied globally rather than scoped to redemption.
+   - `MainActivity.kt`: `PermissionRow` passes `icon = ""` (empty string), dropping icon visual semantics.
+   - Emergency voucher failure branch writes to `attendanceSuccessToast` and dismisses dialog prematurely.
 
 ### T — Task & Boundary
 - **Allowed Blast Radius**: Strictly within `mobile/composeApp/` (`commonMain`, `commonTest`, `androidMain`).
-- **Explicit Non-Goals**: No backend migrations in this sprint; no remote git push; no activation of facial biometric capture without approved DPIA.
+- **Explicit Non-Goals**: No backend migrations; no remote git push; no activation of facial biometric capture without approved DPIA.
 
 ### A — Action & RFC 2119 Invariants
-1. **MUST**: `BaggageSize` base prices MUST be S=60.000, M=75.000 (default), L=90.000, XL=120.000.
-2. **MUST**: `WrapType` MUST provide STANDARD (+0), PREMIUM (+15.000), and BUBBLE (+10.000).
-3. **MUST NOT**: Client MUST NOT default `authMethodOpened` to `"face"`. Default MUST be `"pin"`.
-4. **MUST**: All passenger names rendered on screen MUST pass through `PiiMasker.maskName(...)` (`B*** S******`).
-5. **MUST NOT**: Code and tests MUST NOT contain human-name placeholders (`SANTOSO`, `BUDI`, `PRATAMA`, `LESTARI`). Non-name tokens (`PAX_SAMPLE_1`, `PAX_A`) SHALL be used.
-6. **MUST**: Emergency vouchers MUST be submitted to `POST /api/v1/emergency_vouchers`.
-7. **MUST**: Ktor scan client timeouts MUST be set to 8,000 ms.
-8. **MUST**: ETag `If-None-Match` caching MUST short-circuit 304 responses to cached guidelines.
-9. **MUST**: Zero remote push; commits remain local.
+1. **MUST**: `RedemptionHistoryItem` and `VerifyTicketDto` MUST NOT contain `passengerName` or full `pnrCanonicalHash`. They SHALL consume `masked_display_name` and `pnr_masked`.
+2. **MUST NOT**: `PiiMaskerTest.kt` MUST NOT contain human names (`SANTOSO`). Token `"PAX_A/PAX_B MR"` SHALL be used.
+3. **MUST**: `PiiMasker.maskName` MUST split on both `/` and whitespace to format airline ICAO names (`SURNAME/FIRST`) as `F*** S******`.
+4. **MUST**: `RedemptionClaim.ticketPhoto` default MUST be `null` (fail-closed).
+5. **MUST**: `MainAppScreen` MUST use live `FusedLocationProvider` and `WifiSignalScanner` telemetry for attendance.
+6. **MUST**: `KtorClientFactory` MUST wire `X-Device-Signature`, `X-Timestamp`, `X-Nonce` using `KeystoreSignerProvider`.
+7. **MUST**: `KtorClientFactory` MUST accept a dynamic `networkIfaceProvider: () -> String`.
+8. **MUST**: `GuidelineRepositoryImpl` MUST throw `IllegalStateException` on 304 when cache is null.
+9. **MUST**: `MainActivity` `PermissionRow` MUST render flat vector icons (`FlatGpsPinIcon`, `FlatCameraScanIcon`, `FlatShieldIcon`).
+10. **MUST**: Emergency voucher error in `MainAppScreen` MUST display an error toast and keep the dialog open.
+11. **MUST**: Zero remote push; commits remain local.
 
 ### R — Result Criteria & Definition of Done (DoD)
 
 | DoD ID | Kriteria | Verifikasi / Evidence | Status |
 |---|---|---|---|
 | **DoD-1** | Baggage prices S=60k, M=75k, L=90k, XL=120k, PREMIUM=+15k, BUBBLE=+10k. | `domain/model/BaggageWrap.kt:9-12,27-28` | ✅ PASSED |
-| **DoD-2** | DTO pricing cascade defaults match 7.5M gross / 5M net. | `RedemptionClaim.kt:18`, `ClaimDiscountDto.kt:18`, `RedemptionRepositoryImpl.kt:47` | ✅ PASSED |
+| **DoD-2** | DTO pricing cascade defaults match 7.5M gross / 5M net. | `RedemptionClaim.kt:26-27`, `ClaimDiscountDto.kt:19-20` | ✅ PASSED |
 | **DoD-3** | `ShiftDto.authMethodOpened` default adalah `"pin"`. | `data/remote/dto/ShiftDto.kt:13`, `ShiftDtoTest.kt:18` | ✅ PASSED |
-| **DoD-4** | Purge seluruh placeholder nama manusia (`PAX_SAMPLE_1`, `PAX_A`). | `TicketPhotoTest.kt:25,37,49`, `E2EJourneysTest.kt:47` | ✅ PASSED |
-| **DoD-5** | `PiiMasker` terimplementasi dan terpasang di seluruh dialog UI. | `pii/PiiMasker.kt:8`, `RedemptionDetailDialog.kt:233`, `MainAppScreen.kt:2024` | ✅ PASSED |
-| **DoD-6** | Emergency voucher memanggil `POST /api/v1/emergency_vouchers`. | `RedemptionRepositoryImpl.kt:108`, `MainAppScreen.kt:886` | ✅ PASSED |
-| **DoD-7** | Ktor HTTP timeout bernilai 8.000 ms. | `data/remote/KtorClientFactory.kt:39-41` | ✅ PASSED |
-| **DoD-8** | Header `X-Network-Iface` terpasang di HTTP client. | `data/remote/KtorClientFactory.kt:45` | ✅ PASSED |
-| **DoD-9** | Emoji sistem (🛡️, 📍, 📷, 🧪) dibersihkan, diganti `FlatIcons`. | `FlatIcons.kt:412`, `MainActivity.kt:372`, `TicketCameraDialog.kt:263` | ✅ PASSED |
-| **DoD-10**| Guideline ETag caching menangani `If-None-Match` dan response 304. | `data/repository/GuidelineRepositoryImpl.kt:33-46` | ✅ PASSED |
-| **DoD-11**| Unit test suite 100% lulus (0 failure). | `rtk ./gradlew testDebugUnitTest` (92 passed, 0 failed) | ✅ PASSED |
+| **DoD-4** | Zero placeholder human names in code & tests (grep `SANTOSO` = 0). | `PiiMaskerTest.kt:27` updated to `"PAX_A/PAX_B MR"` | ⏳ IN PROGRESS |
+| **DoD-5** | `PiiMasker` handles `/` and whitespace; wired in all dialogs & toasts. | `pii/PiiMasker.kt`, `MainAppScreen.kt:892` | ⏳ IN PROGRESS |
+| **DoD-6** | Emergency voucher memanggil `POST /api/v1/emergency_vouchers` + error handling. | `RedemptionRepositoryImpl.kt:201`, `MainAppScreen.kt:884` | ⏳ IN PROGRESS |
+| **DoD-7** | Ktor HTTP timeout scoped to redemption (8.000 ms). | `data/remote/KtorClientFactory.kt` | ⏳ IN PROGRESS |
+| **DoD-8** | Header `X-Network-Iface` dynamic provider lambda. | `data/remote/KtorClientFactory.kt` | ⏳ IN PROGRESS |
+| **DoD-9** | Emoji sistem dibersihkan; `MainActivity` permission rows use FlatIcons. | `MainActivity.kt:166,172`, `FlatIcons.kt` | ⏳ IN PROGRESS |
+| **DoD-10**| Guideline ETag 304 fail-closed on null cache. | `data/repository/GuidelineRepositoryImpl.kt:30` | ⏳ IN PROGRESS |
+| **DoD-11**| Unit test suite 100% lulus (0 failure). | `rtk ./gradlew testDebugUnitTest` | ⏳ IN PROGRESS |
+| **DoD-12**| Receive-side DTO PII purge (`masked_display_name`, no plaintext). | `RedemptionHistoryItem.kt`, `VerifyTicketDto.kt` | ⏳ IN PROGRESS |
+| **DoD-13**| Fail-closed photo in `RedemptionClaim` (null default, no dummy pixel). | `RedemptionClaim.kt:21` | ⏳ IN PROGRESS |
+| **DoD-14**| Live GPS & Wi-Fi telemetry wired in `MainAppScreen`. | `MainAppScreen.kt:647,737` | ⏳ IN PROGRESS |
+| **DoD-15**| StrongBox Keystore request signing headers (`X-Device-Signature`). | `KtorClientFactory.kt`, `KeystoreSignerProvider.kt` | ⏳ IN PROGRESS |
 
 ---
 
