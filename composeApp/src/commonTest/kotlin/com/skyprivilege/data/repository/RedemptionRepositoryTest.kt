@@ -358,6 +358,37 @@ class RedemptionRepositoryTest {
     }
 
     @Test
+    fun testIssueEmergencyVoucherSendsPnrCanonicalHashNotPlaintext() = runTest {
+        val mockEngine = MockEngine { request ->
+            val content = request.body as? io.ktor.http.content.OutgoingContent.ByteArrayContent
+            val bodyString = content?.bytes()?.decodeToString().orEmpty()
+            assertTrue(bodyString.contains("pnr_canonical_hash"), "Wire must contain pnr_canonical_hash")
+            assertTrue(!bodyString.contains("\"pnr\""), "Wire must NOT contain plaintext pnr field")
+            assertTrue(!bodyString.contains("\"ABCDEF\""), "Wire must NOT contain plaintext PNR value")
+            respond(
+                content = """{"success": true, "message": null}""",
+                status = HttpStatusCode.OK,
+                headers = headersOf(HttpHeaders.ContentType, "application/json")
+            )
+        }
+
+        val client = HttpClient(mockEngine) {
+            install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
+        }
+
+        val repository = RedemptionRepositoryImpl(client)
+        val result = repository.issueEmergencyVoucher(
+            serialNumber = "EMG-003",
+            pnr = "ABCDEF",
+            supervisorPin = "123456",
+            reason = "Test",
+            cashierId = 1L,
+            outletId = 2L
+        )
+        assertTrue(result.isSuccess)
+    }
+
+    @Test
     fun testIssueEmergencyVoucherSuccessMasksPnr() = runTest {
         val mockEngine = MockEngine { request ->
             assertEquals("/api/v1/emergency_vouchers", request.url.encodedPath)

@@ -25,6 +25,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -130,15 +131,30 @@ fun PermissionGatedApp() {
             }
         }
 
-        MainAppScreen(
-            locationProvider = { locationProvider.getCurrentGpsCoordinate() },
-            wifiScanner = { wifiScanner.getCurrentWifiContext() },
-            signerProvider = { data -> keystoreSigner?.signData(data) ?: ByteArray(0) },
-            networkIfaceProvider = {
-                val netType = activity?.connectivityManager?.currentNetworkType?.value
-                if (netType == NetworkType.CELLULAR) "cellular" else "wifi"
+        if (keystoreSigner == null) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    CircularProgressIndicator()
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text("Menyiapkan Kios...")
+                }
             }
-        )
+        } else {
+            MainAppScreen(
+                locationProvider = { locationProvider.getCurrentGpsCoordinate() },
+                wifiScanner = { wifiScanner.getCurrentWifiContext() },
+                signerProvider = { data -> keystoreSigner!!.signData(data) },
+                networkIfaceProvider = {
+                    val netType = activity?.connectivityManager?.currentNetworkType?.value
+                    if (netType == NetworkType.CELLULAR) "cellular" else "wifi"
+                }
+            )
+        }
     } else {
         // Fullscreen Mandatory Permission Blocking Gate
         Surface(

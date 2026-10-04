@@ -16,6 +16,7 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
+import com.skyprivilege.security.sha256Hex
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -59,7 +60,7 @@ data class SubmitRedemptionResponse(
 @Serializable
 data class EmergencyVoucherRequest(
     @SerialName("serial_number") val serialNumber: String,
-    val pnr: String,
+    @SerialName("pnr_canonical_hash") val pnrCanonicalHash: String,
     @SerialName("supervisor_pin") val supervisorPin: String,
     val reason: String,
     @SerialName("cashier_id") val cashierId: Long,
@@ -212,11 +213,12 @@ class RedemptionRepositoryImpl(
         outletId: Long
     ): Result<String> {
         return runCatching {
+            val pnrCanonicalHash = sha256Hex(pnr.trim().uppercase())
             val response = httpClient.post("/api/v1/emergency_vouchers") {
                 contentType(ContentType.Application.Json)
                 setBody(EmergencyVoucherRequest(
                     serialNumber = serialNumber,
-                    pnr = pnr,
+                    pnrCanonicalHash = pnrCanonicalHash,
                     supervisorPin = supervisorPin,
                     reason = reason,
                     cashierId = cashierId,
