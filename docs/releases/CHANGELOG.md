@@ -9,6 +9,9 @@ No git tag exists yet; version labels are logical until the first tag.
 ### Added
 - Documentation taxonomy per backend RFC-0001: mobile-scoped `PLAN_MASTER`, `DOD_MASTER`, `QA_MASTER` with pinned cross-repo URLs; `releases/CHANGELOG.md`; `docs/README.md`.
 
+### Changed
+- Pre-commit docs guard hardened (Opus review H1/H2/M1): code scope now covers `commonMain/`, `androidMain/`, `gradle/`, `build.gradle.kts`, `settings.gradle.kts`, `scripts/`; evidence must live under `docs/dod|qa|plans|releases/` or `commonTest/`; `SKIP_DOCS=1` requires `SKIP_DOCS_REASON` of at least 10 chars.
+
 ### Removed
 - Empty `docs/superpowers/` folder.
 
