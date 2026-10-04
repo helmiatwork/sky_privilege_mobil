@@ -44,6 +44,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import com.skyprivilege.location.FusedLocationProvider
 import com.skyprivilege.network.NetworkConnectivityManager
 import com.skyprivilege.network.NetworkType
@@ -119,13 +121,19 @@ fun PermissionGatedApp() {
     if (permissionsGranted) {
         val locationProvider = remember { FusedLocationProvider(context) }
         val wifiScanner = remember { WifiSignalScanner(context) }
-        val keystoreSigner = remember { KeystoreSignerProvider() }
+        var keystoreSigner by remember { mutableStateOf<KeystoreSignerProvider?>(null) }
         val activity = context as? MainActivity
+
+        LaunchedEffect(Unit) {
+            withContext(Dispatchers.Default) {
+                keystoreSigner = KeystoreSignerProvider()
+            }
+        }
 
         MainAppScreen(
             locationProvider = { locationProvider.getCurrentGpsCoordinate() },
             wifiScanner = { wifiScanner.getCurrentWifiContext() },
-            signerProvider = { data -> keystoreSigner.signData(data) },
+            signerProvider = { data -> keystoreSigner?.signData(data) ?: ByteArray(0) },
             networkIfaceProvider = {
                 val netType = activity?.connectivityManager?.currentNetworkType?.value
                 if (netType == NetworkType.CELLULAR) "cellular" else "wifi"

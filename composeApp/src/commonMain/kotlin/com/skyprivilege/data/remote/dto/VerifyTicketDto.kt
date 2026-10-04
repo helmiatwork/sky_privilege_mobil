@@ -23,7 +23,7 @@ data class VerifyTicketRequest(
 data class ParsedTicketDto(
     val valid: Boolean = false,
     @SerialName("masked_display_name") val maskedDisplayName: String? = null,
-    val pnr: String? = null,
+    @SerialName("pnr_masked") val pnrMasked: String? = null,
     @SerialName("from_airport") val fromAirport: String? = null,
     @SerialName("to_airport") val toAirport: String? = null,
     @SerialName("operating_carrier") val operatingCarrier: String? = null,

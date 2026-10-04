@@ -22,13 +22,14 @@ object KtorClientFactory {
         authTokenProvider: (() -> String?)? = null,
         networkIfaceProvider: () -> String = { "wifi" },
         signerProvider: ((ByteArray) -> ByteArray)? = null,
-        engine: HttpClientEngine? = null
+        engine: HttpClientEngine? = null,
+        timeoutMillis: Long = 30_000L
     ): HttpClient {
         val config: io.ktor.client.HttpClientConfig<*>.() -> Unit = {
             install(HttpTimeout) {
-                requestTimeoutMillis = 8_000L
-                connectTimeoutMillis = 8_000L
-                socketTimeoutMillis = 8_000L
+                requestTimeoutMillis = timeoutMillis
+                connectTimeoutMillis = if (timeoutMillis < 10_000L) timeoutMillis else 10_000L
+                socketTimeoutMillis = timeoutMillis
             }
             install(ContentNegotiation) {
                 json(Json {
@@ -66,4 +67,23 @@ object KtorClientFactory {
 
         return if (engine != null) HttpClient(engine, config) else HttpClient(config)
     }
+
+    fun createRedemptionHttpClient(
+        baseUrl: String = "http://10.0.2.2:3001",
+        deviceId: String = "DEV-TABLET-001",
+        outletId: Long = 2L,
+        authTokenProvider: (() -> String?)? = null,
+        networkIfaceProvider: () -> String = { "wifi" },
+        signerProvider: ((ByteArray) -> ByteArray)? = null,
+        engine: HttpClientEngine? = null
+    ): HttpClient = createHttpClient(
+        baseUrl = baseUrl,
+        deviceId = deviceId,
+        outletId = outletId,
+        authTokenProvider = authTokenProvider,
+        networkIfaceProvider = networkIfaceProvider,
+        signerProvider = signerProvider,
+        engine = engine,
+        timeoutMillis = 8_000L
+    )
 }

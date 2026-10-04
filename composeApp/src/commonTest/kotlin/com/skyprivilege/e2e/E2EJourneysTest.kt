@@ -549,8 +549,6 @@ class E2EJourneysTest {
             amountCents = 2_500_000L,
             flightDate = sampleTicket.flightDate,
             flightNumber = sampleTicket.flightNumber,
-            passengerName = sampleTicket.passengerName,
-            rawPnr = sampleTicket.pnr,
             shiftId = 10L,
             bagSize = "L",
             wrapType = "bubble",

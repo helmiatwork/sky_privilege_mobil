@@ -132,8 +132,19 @@ fun MainAppScreen(
     val cashierId = 2L
     val deviceId = "DEV-TABLET-001"
 
-    val httpClient = remember(baseUrl, networkIfaceProvider, signerProvider) {
+    val generalHttpClient = remember(baseUrl, networkIfaceProvider, signerProvider) {
         KtorClientFactory.createHttpClient(
+            baseUrl = baseUrl,
+            deviceId = deviceId,
+            outletId = outletId,
+            networkIfaceProvider = networkIfaceProvider,
+            signerProvider = signerProvider,
+            timeoutMillis = 30_000L
+        )
+    }
+
+    val redemptionHttpClient = remember(baseUrl, networkIfaceProvider, signerProvider) {
+        KtorClientFactory.createRedemptionHttpClient(
             baseUrl = baseUrl,
             deviceId = deviceId,
             outletId = outletId,
@@ -142,12 +153,12 @@ fun MainAppScreen(
         )
     }
 
-    val guidelineRepo = remember(httpClient) { GuidelineRepositoryImpl(httpClient) }
-    val shiftRepo = remember(httpClient) { ShiftRepositoryImpl(httpClient) }
-    val ticketRepo = remember(httpClient) { TicketRepositoryImpl(httpClient) }
-    val redemptionRepo = remember(httpClient) { RedemptionRepositoryImpl(httpClient) }
-    val attendanceRepo = remember(httpClient) { AttendanceRepositoryImpl(httpClient) }
-    val profileRepo = remember(httpClient) { ProfileRepositoryImpl(httpClient) }
+    val guidelineRepo = remember(generalHttpClient) { GuidelineRepositoryImpl(generalHttpClient) }
+    val shiftRepo = remember(generalHttpClient) { ShiftRepositoryImpl(generalHttpClient) }
+    val ticketRepo = remember(redemptionHttpClient) { TicketRepositoryImpl(redemptionHttpClient) }
+    val redemptionRepo = remember(redemptionHttpClient) { RedemptionRepositoryImpl(redemptionHttpClient) }
+    val attendanceRepo = remember(generalHttpClient) { AttendanceRepositoryImpl(generalHttpClient) }
+    val profileRepo = remember(generalHttpClient) { ProfileRepositoryImpl(generalHttpClient) }
 
     val coroutineScope = rememberCoroutineScope()
 
@@ -373,7 +384,7 @@ fun MainAppScreen(
     }
 
     // Initial Load
-    LaunchedEffect(httpClient) {
+    LaunchedEffect(generalHttpClient) {
         shiftRepo.getCurrentShift(cashierId, outletId).onSuccess { res ->
             if (res.success && res.shift != null) {
                 activeShiftId = res.shift.id
@@ -655,11 +666,11 @@ fun MainAppScreen(
                                 deviceId = 1L,
                                 shiftId = activeShiftId,
                                 checklistConfirmed = true,
-                                latitude = liveGps?.latitude ?: -6.1256,
-                                longitude = liveGps?.longitude ?: 106.6558,
-                                accuracy = liveGps?.accuracyMeters ?: 15.0f,
-                                wifiBssid = liveWifi?.bssid ?: "aa:bb:cc:dd:ee:ff",
-                                wifiSsid = liveWifi?.ssid ?: "SkyPrivilege_Staff"
+                                latitude = liveGps?.latitude,
+                                longitude = liveGps?.longitude,
+                                accuracy = liveGps?.accuracyMeters,
+                                wifiBssid = liveWifi?.bssid,
+                                wifiSsid = liveWifi?.ssid
                             ).onSuccess { ticket ->
                                 isVerifyingTicket = false
                                 showCameraScanDialog = false
@@ -744,17 +755,8 @@ fun MainAppScreen(
                                 netAmountCents = netAmountCents,
                                 ticketPhotoData = photoToSend,
                                 signals = com.skyprivilege.domain.model.LocationContext(
-                                    gps = liveGps ?: com.skyprivilege.domain.model.GpsCoordinate(
-                                        latitude = -6.1256,
-                                        longitude = 106.6558,
-                                        accuracyMeters = 15f,
-                                        isMock = false
-                                    ),
-                                    wifi = liveWifi ?: com.skyprivilege.domain.model.WifiContext(
-                                        bssid = "aa:bb:cc:dd:ee:ff",
-                                        ssid = "SkyPrivilege_Staff",
-                                        rssiDbm = -60
-                                    ),
+                                    gps = liveGps,
+                                    wifi = liveWifi,
                                     deviceIntegrity = com.skyprivilege.domain.model.DeviceIntegrityContext(
                                         deviceRecognition = "MEETS_BASIC_INTEGRITY",
                                         isRooted = false,
@@ -811,9 +813,9 @@ fun MainAppScreen(
                     currentTimeText = "08:15:30 WIB",
                     checkInTime = todayAttendance?.checkInAt?.let { if (it.length >= 16) it.substring(11, 16) else it } ?: todayAttendance?.startTime,
                     checkOutTime = todayAttendance?.checkOutAt?.let { if (it.length >= 16) it.substring(11, 16) else it } ?: todayAttendance?.endTime,
-                    latitude = currentGpsCoord?.latitude ?: -6.1256,
-                    longitude = currentGpsCoord?.longitude ?: 106.6558,
-                    accuracyMeters = currentGpsCoord?.accuracyMeters ?: 15.0f,
+                    latitude = currentGpsCoord?.latitude,
+                    longitude = currentGpsCoord?.longitude,
+                    accuracyMeters = currentGpsCoord?.accuracyMeters,
                     isSubmitting = isAttendanceSubmitting,
                     errorMessage = attendanceDialogError,
                     onDismiss = { showGpsAttendanceDialog = false },
@@ -821,9 +823,10 @@ fun MainAppScreen(
                         isAttendanceSubmitting = true
                         attendanceDialogError = null
                         coroutineScope.launch {
-                            val finalLat = if (lat != -6.1256) lat else (locationProvider?.invoke()?.latitude ?: lat)
-                            val finalLng = if (lng != 106.6558) lng else (locationProvider?.invoke()?.longitude ?: lng)
-                            val finalAcc = if (acc != 15.0f) acc else (locationProvider?.invoke()?.accuracyMeters ?: acc)
+                            val live = locationProvider?.invoke()
+                            val finalLat = lat ?: live?.latitude
+                            val finalLng = lng ?: live?.longitude
+                            val finalAcc = acc ?: live?.accuracyMeters
                             attendanceRepo.recordAttendance(
                                 cashierId = cashierId,
                                 outletId = outletId,
@@ -921,7 +924,6 @@ fun MainAppScreen(
                             }.onFailure { err ->
                                 isEmergencySubmitting = false
                                 emergencyVoucherError = err.message ?: "Koneksi ke backend gagal. Coba lagi."
-                                attendanceSuccessToast = "Gagal terbitkan voucher: ${err.message}"
                             }
                         }
                     }

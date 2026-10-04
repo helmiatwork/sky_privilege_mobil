@@ -37,7 +37,7 @@ class TicketRepositoryImpl(
                 val t = body.ticket
                 Ticket(
                     passengerName = t.maskedDisplayName.orEmpty(),
-                    pnr = t.pnr.orEmpty(),
+                    pnr = t.pnrMasked.orEmpty(),
                     fromAirport = t.fromAirport.orEmpty(),
                     toAirport = t.toAirport.orEmpty(),
                     operatingCarrier = t.operatingCarrier.orEmpty(),
@@ -101,7 +101,7 @@ class TicketRepositoryImpl(
                 val t = body.ticket
                 Ticket(
                     passengerName = t.maskedDisplayName.orEmpty(),
-                    pnr = t.pnr.orEmpty(),
+                    pnr = t.pnrMasked.orEmpty(),
                     fromAirport = t.fromAirport.orEmpty(),
                     toAirport = t.toAirport.orEmpty(),
                     operatingCarrier = t.operatingCarrier.orEmpty(),

@@ -60,4 +60,21 @@ class KtorClientFactoryTest {
 
         client.get("/test")
     }
+
+    @Test
+    fun testCreateRedemptionHttpClientInitializesSuccessfully() = runTest {
+        val mockEngine = MockEngine { _ ->
+            respond("REDEMPTION_OK", HttpStatusCode.OK)
+        }
+
+        val client = KtorClientFactory.createRedemptionHttpClient(
+            baseUrl = "http://localhost:3000",
+            deviceId = "DEV-REDEMPTION-01",
+            outletId = 1L,
+            engine = mockEngine
+        )
+
+        val response = client.get("/api/v1/redemptions")
+        assertEquals(HttpStatusCode.OK, response.status)
+    }
 }

@@ -52,13 +52,13 @@ fun GpsAttendanceDialog(
     currentTimeText: String = "08:15:30 WIB",
     checkInTime: String? = null,
     checkOutTime: String? = null,
-    latitude: Double = -6.1256,
-    longitude: Double = 106.6558,
-    accuracyMeters: Float = 15.0f,
+    latitude: Double? = null,
+    longitude: Double? = null,
+    accuracyMeters: Float? = null,
     isSubmitting: Boolean = false,
     errorMessage: String? = null,
     onDismiss: () -> Unit,
-    onSaveAttendance: (type: String, latitude: Double, longitude: Double, accuracy: Float) -> Unit
+    onSaveAttendance: (type: String, latitude: Double?, longitude: Double?, accuracy: Float?) -> Unit
 ) {
     val hasCheckIn = !checkInTime.isNullOrBlank() && checkInTime != "--:--"
     val hasCheckOut = !checkOutTime.isNullOrBlank() && checkOutTime != "--:--"
@@ -204,11 +204,11 @@ fun GpsAttendanceDialog(
                             .align(Alignment.TopEnd)
                             .padding(8.dp)
                             .clip(RoundedCornerShape(6.dp))
-                            .background(Color(0xCC059669))
+                            .background(if (accuracyMeters != null) Color(0xCC059669) else Color(0xCC64748B))
                             .padding(horizontal = 8.dp, vertical = 3.dp)
                     ) {
                         Text(
-                            text = "Akurasi: ${accuracyMeters.toInt()} meter",
+                            text = if (accuracyMeters != null) "Akurasi: ${accuracyMeters.toInt()} meter" else "GPS Tidak Aktif",
                             color = Color.White,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Medium
@@ -224,7 +224,7 @@ fun GpsAttendanceDialog(
                             .padding(horizontal = 10.dp, vertical = 5.dp)
                     ) {
                         Text(
-                            text = "CGK Terminal 3 Gate 13 ($latitude, $longitude)",
+                            text = if (latitude != null && longitude != null) "CGK Terminal 3 Gate 13 ($latitude, $longitude)" else "Lokasi GPS Tidak Terdeteksi",
                             color = Color(0xFF94A3B8),
                             fontSize = 10.sp,
                             fontFamily = FontFamily.Monospace
@@ -301,9 +301,11 @@ fun GpsAttendanceDialog(
                         modifier = Modifier.padding(10.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = if (!hasCheckIn) "🟢" else if (!hasCheckOut) "🟠" else "🔄",
-                            fontSize = 16.sp
+                        Box(
+                            modifier = Modifier
+                                .size(10.dp)
+                                .clip(CircleShape)
+                                .background(badgeColor)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Column {
