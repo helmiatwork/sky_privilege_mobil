@@ -98,4 +98,8 @@ android {
 detekt {
     buildUponDefaultConfig = true
     config.setFrom(files("$rootDir/config/detekt/detekt.yml"))
+    // KMP source sets are not auto-discovered by the plain `detekt` task (NO-SOURCE otherwise).
+    source.setFrom(files("src/commonMain/kotlin", "src/androidMain/kotlin", "src/commonTest/kotlin", "src/androidUnitTest/kotlin"))
+    // Legacy debt frozen at adoption; regenerate only via `./gradlew detektBaseline` with reviewer sign-off.
+    baseline = file("$rootDir/config/detekt/baseline.xml")
 }

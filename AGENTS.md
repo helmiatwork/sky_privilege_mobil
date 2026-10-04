@@ -7,7 +7,7 @@ Delta only. Project rules: `../AGENTS.md`. Global rules: `~/.gemini/AGENTS.md`.
 - Build check: `./gradlew :composeApp:assemble`.
 - Lint: `./gradlew :composeApp:lint`.
 - GitNexus pre-commit: `rtk gitnexus detect-changes -C mobile`.
-- Static analysis: `rtk ./gradlew detekt` (0 issues; config in `config/detekt/detekt.yml`).
+- Static analysis: `rtk ./gradlew detekt` (0 new issues; rules in `config/detekt/detekt.yml`, legacy debt frozen in `config/detekt/baseline.xml`, never regenerate baseline to hide new findings).
 
 ## Mechanical Same-Commit Sync & Doc Enforcement (MANDATORY)
 - **Rule**: Any change under `composeApp/src/` MUST ship in the same commit as its `DOD_<slug>.md` (or `docs/dod/DOD_MASTER.md`), `QA_<slug>.md`, `CHANGELOG.md`, `composeApp/src/commonTest/`, or other `docs/` evidence.
