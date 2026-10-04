@@ -32,7 +32,6 @@ class ShiftDtoTest {
             outletId = 34L,
             deviceId = 56L,
             openingCash = 500000.0,
-            openingSelfieKey = "selfie_key_test",
             authMethodOpened = "face"
         )
 

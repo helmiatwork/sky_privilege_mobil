@@ -42,7 +42,7 @@ fun SopGuidelineDialog(
         SopItem(
             title = "2. Checklist Keaslian Fisik",
             description = "Wajib memeriksa watermark kertas tiket, cetakan hologram, dan stempel check-in maskapai sebelum memproses diskon.",
-            icon = "📋"
+            icon = ""
         ),
         SopItem(
             title = "3. Absensi GPS Geofence",
@@ -52,17 +52,17 @@ fun SopGuidelineDialog(
         SopItem(
             title = "4. Buka & Tutup Shift",
             description = "Buka shift kasir sebelum transaksi pertama dimulai. Hitung rekonsiliasi kas modal saat serah terima shift.",
-            icon = "🔑"
+            icon = ""
         ),
         SopItem(
             title = "5. Voucher Darurat Offline",
             description = "Hanya gunakan Voucher Darurat saat jaringan bandara offline. Wajib input PNR dan minta otorisasi supervisor.",
-            icon = "🎟️"
+            icon = ""
         ),
         SopItem(
             title = "6. Protokol Keamanan PIN",
             description = "Jangan pernah membagikan PIN kasir kepada siapapun. Ganti PIN secara berkala via menu Akun Saya.",
-            icon = "🔒"
+            icon = ""
         )
     )
 
@@ -75,7 +75,7 @@ fun SopGuidelineDialog(
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
                 Text(
-                    text = "📖 Panduan SOP Kasir",
+                    text = "Panduan SOP Kasir",
                     fontSize = 17.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF0F172A)
@@ -99,7 +99,9 @@ fun SopGuidelineDialog(
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Row(modifier = Modifier.padding(12.dp)) {
-                                Text(item.icon, fontSize = 20.sp, modifier = Modifier.padding(end = 10.dp))
+                                if (item.icon.isNotBlank()) {
+                                    Text(item.icon, fontSize = 20.sp, modifier = Modifier.padding(end = 10.dp))
+                                }
                                 Column {
                                     Text(item.title, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF0F172A))
                                     Spacer(modifier = Modifier.height(2.dp))

@@ -81,7 +81,7 @@ fun ChangePasswordDialog(
                         modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
                     ) {
                         Text(
-                            text = "⚠️ $displayedError",
+                            text = displayedError,
                             color = Color(0xFFBE123C),
                             fontSize = 12.sp,
                             modifier = Modifier.padding(10.dp)

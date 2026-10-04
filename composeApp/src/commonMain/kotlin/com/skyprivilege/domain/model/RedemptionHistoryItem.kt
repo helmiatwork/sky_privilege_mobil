@@ -6,11 +6,10 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class RedemptionHistoryItem(
     val id: Long,
-    @SerialName("pnr_canonical_hash") val pnrCanonicalHash: String = "",
-    @SerialName("pnr_masked") val pnrMasked: String = "",
+    @SerialName("pnr_masked") val pnrMasked: String? = null,
     @SerialName("flight_number") val flightNumber: String = "",
     @SerialName("flight_date") val flightDate: String = "",
-    @SerialName("passenger_name") val passengerName: String = "",
+    @SerialName("masked_display_name") val maskedDisplayName: String? = null,
     @SerialName("airline_name") val airlineName: String = "",
     @SerialName("outlet_name") val outletName: String = "",
     @SerialName("cashier_name") val cashierName: String = "",

@@ -40,7 +40,16 @@ data class SubmitRedemptionRequest(
     @SerialName("payment_method") val paymentMethod: String = "qris",
     @SerialName("gross_amount_cents") val grossAmountCents: Long = 7_500_000L,
     @SerialName("net_amount_cents") val netAmountCents: Long = 5_000_000L
-)
+) {
+    init {
+        ticketPhoto?.let {
+            require(it.length < 250_000) { "Ticket photo size must be less than 250 KB" }
+        }
+        ticketPhotoData?.let {
+            require(it.length < 250_000) { "Ticket photo size must be less than 250 KB" }
+        }
+    }
+}
 
 @Serializable
 data class SubmitRedemptionResponse(
@@ -220,7 +229,7 @@ class RedemptionRepositoryImpl(
             }.body<EmergencyVoucherResponse>()
 
             if (response.success) {
-                response.message ?: "Voucher Darurat #$serialNumber berhasil diterbitkan untuk PNR $pnr"
+                response.message ?: "Voucher Darurat #$serialNumber berhasil diterbitkan untuk PNR ${com.skyprivilege.pii.PiiMasker.maskPnr(pnr)}"
             } else {
                 throw IllegalStateException(response.error ?: "Penerbitan voucher darurat gagal")
             }

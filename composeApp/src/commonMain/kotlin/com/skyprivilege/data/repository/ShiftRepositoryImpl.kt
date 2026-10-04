@@ -24,8 +24,7 @@ class ShiftRepositoryImpl(
         cashierId: Long,
         outletId: Long,
         deviceId: Long?,
-        openingCash: Double,
-        openingSelfieKey: String?
+        openingCash: Double
     ): Result<ShiftDto> {
         return runCatching {
             val response = httpClient.post("/api/v1/shifts/open") {
@@ -35,8 +34,7 @@ class ShiftRepositoryImpl(
                         cashierId = cashierId,
                         outletId = outletId,
                         deviceId = deviceId,
-                        openingCash = openingCash,
-                        openingSelfieKey = openingSelfieKey
+                        openingCash = openingCash
                     )
                 )
             }.body<OpenShiftResponse>()

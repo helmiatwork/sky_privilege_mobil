@@ -50,6 +50,7 @@ import com.skyprivilege.domain.model.Ticket
 import com.skyprivilege.domain.model.WrapType
 import com.skyprivilege.pii.PiiMasker
 import com.skyprivilege.ui.components.FlatGpsPinIcon
+import com.skyprivilege.ui.components.FlatShieldIcon
 
 @Composable
 fun TicketInvalidWarningDialog(
@@ -85,7 +86,7 @@ fun TicketInvalidWarningDialog(
                         .background(Color(0xFFFFE4E6)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("⚠️", fontSize = 28.sp)
+                    FlatShieldIcon(tint = Color(0xFFDC2626), size = 28.dp)
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -135,7 +136,7 @@ fun TicketInvalidWarningDialog(
                             Spacer(modifier = Modifier.height(10.dp))
                             if (!redeemedAt.isNullOrBlank()) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text("🕒 Waktu", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF7F1D1D), modifier = Modifier.width(85.dp))
+                                    Text("Waktu", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF7F1D1D), modifier = Modifier.width(85.dp))
                                     Text(": $redeemedAt", fontSize = 11.sp, color = Color(0xFF1E293B), fontWeight = FontWeight.SemiBold)
                                 }
                                 Spacer(modifier = Modifier.height(5.dp))
@@ -153,7 +154,7 @@ fun TicketInvalidWarningDialog(
                             }
                             if (!redeemedCashier.isNullOrBlank()) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text("👤 Petugas", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF7F1D1D), modifier = Modifier.width(85.dp))
+                                    Text("Petugas", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF7F1D1D), modifier = Modifier.width(85.dp))
                                     Text(": $redeemedCashier", fontSize = 11.sp, color = Color(0xFF1E293B), fontWeight = FontWeight.SemiBold)
                                 }
                             }
@@ -276,7 +277,7 @@ fun TicketValidResultDialog(
                                 .background(Color(0xFFDCFCE7)),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text("✅", fontSize = 18.sp)
+                            FlatShieldIcon(tint = Color(0xFF15803D), size = 18.dp)
                         }
                         Spacer(modifier = Modifier.width(8.dp))
                         Column {
@@ -329,7 +330,7 @@ fun TicketValidResultDialog(
                                 color = Color(0xFF0F172A)
                             )
                             Text(
-                                text = "PNR: ${ticket.pnr}",
+                                text = "PNR: ${PiiMasker.maskPnr(ticket.pnr)}",
                                 fontSize = 11.sp,
                                 fontFamily = FontFamily.Monospace,
                                 color = Color(0xFF0284C7),
@@ -595,7 +596,7 @@ fun TicketValidResultDialog(
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
                             Text(
-                                text = "🎉 Diskon Berhasil Diinjeksi ke Moka POS!",
+                                text = "Diskon Berhasil Diinjeksi ke Moka POS!",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color(0xFF15803D)
@@ -615,7 +616,7 @@ fun TicketValidResultDialog(
                                     .padding(8.dp)
                             ) {
                                 Text(
-                                    text = "⚠️ WAJIB STEMPEL BASAH: Berikan stempel fisik 'CLAIMED - SKYPRIVILEGE' pada tiket penumpang!",
+                                    text = "WAJIB STEMPEL BASAH: Berikan stempel fisik 'CLAIMED - SKYPRIVILEGE' pada tiket penumpang!",
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFFB45309)

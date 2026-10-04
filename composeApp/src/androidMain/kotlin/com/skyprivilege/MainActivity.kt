@@ -44,12 +44,18 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import com.skyprivilege.location.FusedLocationProvider
 import com.skyprivilege.network.NetworkConnectivityManager
+import com.skyprivilege.network.NetworkType
+import com.skyprivilege.security.KeystoreSignerProvider
 import com.skyprivilege.ui.MainAppScreen
+import com.skyprivilege.ui.components.FlatCameraScanIcon
+import com.skyprivilege.ui.components.FlatGpsPinIcon
 import com.skyprivilege.ui.components.FlatShieldIcon
+import com.skyprivilege.wifi.WifiSignalScanner
 
 class MainActivity : ComponentActivity() {
-    private lateinit var connectivityManager: NetworkConnectivityManager
+    internal lateinit var connectivityManager: NetworkConnectivityManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -111,7 +117,20 @@ fun PermissionGatedApp() {
     }
 
     if (permissionsGranted) {
-        MainAppScreen()
+        val locationProvider = remember { FusedLocationProvider(context) }
+        val wifiScanner = remember { WifiSignalScanner(context) }
+        val keystoreSigner = remember { KeystoreSignerProvider() }
+        val activity = context as? MainActivity
+
+        MainAppScreen(
+            locationProvider = { locationProvider.getCurrentGpsCoordinate() },
+            wifiScanner = { wifiScanner.getCurrentWifiContext() },
+            signerProvider = { data -> keystoreSigner.signData(data) },
+            networkIfaceProvider = {
+                val netType = activity?.connectivityManager?.currentNetworkType?.value
+                if (netType == NetworkType.CELLULAR) "cellular" else "wifi"
+            }
+        )
     } else {
         // Fullscreen Mandatory Permission Blocking Gate
         Surface(
@@ -163,13 +182,13 @@ fun PermissionGatedApp() {
                 ) {
                     Column(modifier = Modifier.padding(18.dp)) {
                         PermissionRow(
-                            icon = "",
+                            icon = { FlatGpsPinIcon(tint = Color(0xFF38BDF8), size = 20.dp) },
                             title = "Lokasi Presisi (GPS)",
                             description = "Memastikan kasir bertugas di geofence outlet bandara yang sah & mencegah manipulasi shift."
                         )
                         Spacer(modifier = Modifier.height(14.dp))
                         PermissionRow(
-                            icon = "",
+                            icon = { FlatCameraScanIcon(tint = Color(0xFF38BDF8), size = 20.dp) },
                             title = "Kamera Scanner",
                             description = "Memindai barcode PDF417 boarding pass maskapai & verifikasi keaslian fisik tiket."
                         )
@@ -212,9 +231,9 @@ fun PermissionGatedApp() {
 
 @Composable
 fun PermissionRow(
-    icon: String,
     title: String,
-    description: String
+    description: String,
+    icon: @Composable () -> Unit
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -227,7 +246,7 @@ fun PermissionRow(
                 .background(Color(0xFF072146)),
             contentAlignment = Alignment.Center
         ) {
-            Text(icon, fontSize = 18.sp)
+            icon()
         }
         Spacer(modifier = Modifier.width(12.dp))
         Column {

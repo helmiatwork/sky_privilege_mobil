@@ -201,7 +201,7 @@ fun AttendanceCorrectionDialog(
                 if (errorMessage != null) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "⚠️ $errorMessage",
+                        text = errorMessage,
                         color = Color(0xFFBE123C),
                         fontSize = 11.sp
                     )

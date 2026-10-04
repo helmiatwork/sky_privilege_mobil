@@ -230,7 +230,7 @@ fun RedemptionDetailDialog(
                                         fontWeight = FontWeight.SemiBold
                                     )
                                     Text(
-                                        text = PiiMasker.maskName(item.passengerName),
+                                        text = item.maskedDisplayName ?: "-",
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = Color(0xFF0F172A)
@@ -361,7 +361,7 @@ fun RedemptionDetailDialog(
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 Text(
-                                    text = "PNR: ${item.pnrMasked}",
+                                    text = "PNR: ${item.pnrMasked ?: "-"}",
                                     fontSize = 10.sp,
                                     fontFamily = FontFamily.Monospace,
                                     color = Color(0xFF64748B)

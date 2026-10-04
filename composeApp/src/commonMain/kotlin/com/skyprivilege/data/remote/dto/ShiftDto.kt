@@ -9,7 +9,6 @@ data class OpenShiftRequest(
     @SerialName("outlet_id") val outletId: Long,
     @SerialName("device_id") val deviceId: Long? = null,
     @SerialName("opening_cash") val openingCash: Double = 0.0,
-    @SerialName("opening_selfie_key") val openingSelfieKey: String? = null,
     @SerialName("auth_method_opened") val authMethodOpened: String = "pin"
 )
 
@@ -33,8 +32,7 @@ data class ShiftDto(
     @SerialName("total_redemptions_count") val totalRedemptionsCount: Int = 0,
     @SerialName("total_discount_cents") val totalDiscountCents: Long = 0,
     @SerialName("opening_cash") val openingCash: Double? = null,
-    @SerialName("closing_cash") val closingCash: Double? = null,
-    @SerialName("opening_selfie_key") val openingSelfieKey: String? = null
+    @SerialName("closing_cash") val closingCash: Double? = null
 )
 
 @Serializable

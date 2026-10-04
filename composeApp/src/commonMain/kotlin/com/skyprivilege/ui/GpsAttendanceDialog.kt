@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.skyprivilege.ui.components.FlatShieldIcon
 
 @Composable
 fun GpsAttendanceDialog(
@@ -325,7 +326,7 @@ fun GpsAttendanceDialog(
                 if (errorMessage != null) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "⚠️ $errorMessage",
+                        text = errorMessage,
                         color = Color(0xFFBE123C),
                         fontSize = 11.sp
                     )
@@ -402,7 +403,7 @@ fun GpsAttendanceDialog(
                             .background(Color(0xFFFEF2F2)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("⚠️", fontSize = 26.sp)
+                        FlatShieldIcon(tint = Color(0xFFDC2626), size = 26.dp)
                     }
 
                     Spacer(modifier = Modifier.height(14.dp))

@@ -67,12 +67,14 @@ import com.skyprivilege.data.repository.ShiftRepositoryImpl
 import com.skyprivilege.data.repository.TicketRepositoryImpl
 import com.skyprivilege.domain.model.AttendanceHistoryItem
 import com.skyprivilege.domain.model.BarcodeData
+import com.skyprivilege.domain.model.GpsCoordinate
 import com.skyprivilege.domain.model.LocationContext
 import com.skyprivilege.domain.model.RedemptionClaim
 import com.skyprivilege.domain.model.RedemptionHistoryItem
 import com.skyprivilege.domain.model.Ticket
 import com.skyprivilege.domain.model.TicketGuideline
 import com.skyprivilege.domain.model.TicketVerificationException
+import com.skyprivilege.domain.model.WifiContext
 import com.skyprivilege.data.remote.dto.CashierProfileDto
 import com.skyprivilege.data.repository.ProfileRepositoryImpl
 import com.skyprivilege.pii.PiiMasker
@@ -119,18 +121,24 @@ val BgLight = Color(0xFFF8FAFC)
 
 @Composable
 fun MainAppScreen(
-    initialBaseUrl: String = "http://10.0.2.2:3001"
+    initialBaseUrl: String = "http://10.0.2.2:3001",
+    locationProvider: (suspend () -> GpsCoordinate?)? = null,
+    wifiScanner: (() -> WifiContext?)? = null,
+    signerProvider: ((ByteArray) -> ByteArray)? = null,
+    networkIfaceProvider: () -> String = { "wifi" }
 ) {
     var baseUrl by remember { mutableStateOf(initialBaseUrl) }
     val outletId = 2L
     val cashierId = 2L
     val deviceId = "DEV-TABLET-001"
 
-    val httpClient = remember(baseUrl) {
+    val httpClient = remember(baseUrl, networkIfaceProvider, signerProvider) {
         KtorClientFactory.createHttpClient(
             baseUrl = baseUrl,
             deviceId = deviceId,
-            outletId = outletId
+            outletId = outletId,
+            networkIfaceProvider = networkIfaceProvider,
+            signerProvider = signerProvider
         )
     }
 
@@ -191,6 +199,7 @@ fun MainAppScreen(
     var showEmergencyDialog by remember { mutableStateOf(false) }
     var isEmergencySubmitting by remember { mutableStateOf(false) }
     var emergencySuccessMsg by remember { mutableStateOf<String?>(null) }
+    var emergencyVoucherError by remember { mutableStateOf<String?>(null) }
 
     // Checklist state
     var showChecklistDialog by remember { mutableStateOf(false) }
@@ -468,7 +477,7 @@ fun MainAppScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "⚠️ $globalError",
+                                text = globalError.orEmpty(),
                                 color = Color(0xFFBE123C),
                                 fontSize = 12.sp,
                                 modifier = Modifier.weight(1f)
@@ -495,7 +504,7 @@ fun MainAppScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "✅ $attendanceSuccessToast",
+                                text = attendanceSuccessToast.orEmpty(),
                                 color = Color(0xFF15803D),
                                 fontSize = 12.sp,
                                 modifier = Modifier.weight(1f)
@@ -636,6 +645,8 @@ fun MainAppScreen(
                         isVerifyingTicket = true
                         globalError = null
                         coroutineScope.launch {
+                            val liveGps = locationProvider?.invoke()
+                            val liveWifi = wifiScanner?.invoke()
                             ticketRepo.verifyTicket(
                                 barcodeData = barcodeData,
                                 imageBase64 = imageBase64,
@@ -644,11 +655,11 @@ fun MainAppScreen(
                                 deviceId = 1L,
                                 shiftId = activeShiftId,
                                 checklistConfirmed = true,
-                                latitude = -6.1256,
-                                longitude = 106.6558,
-                                accuracy = 15.0f,
-                                wifiBssid = "aa:bb:cc:dd:ee:ff",
-                                wifiSsid = "SkyPrivilege_Staff"
+                                latitude = liveGps?.latitude ?: -6.1256,
+                                longitude = liveGps?.longitude ?: 106.6558,
+                                accuracy = liveGps?.accuracyMeters ?: 15.0f,
+                                wifiBssid = liveWifi?.bssid ?: "aa:bb:cc:dd:ee:ff",
+                                wifiSsid = liveWifi?.ssid ?: "SkyPrivilege_Staff"
                             ).onSuccess { ticket ->
                                 isVerifyingTicket = false
                                 showCameraScanDialog = false
@@ -719,6 +730,8 @@ fun MainAppScreen(
                         val photoToSend = capturedPhotoBase64
                         isClaimingDiscount = true
                         coroutineScope.launch {
+                            val liveGps = locationProvider?.invoke()
+                            val liveWifi = wifiScanner?.invoke()
                             redemptionRepo.requestClaimToken(
                                 orderId = orderId,
                                 pnrHash = t.canonicalHash.orEmpty(),
@@ -731,13 +744,13 @@ fun MainAppScreen(
                                 netAmountCents = netAmountCents,
                                 ticketPhotoData = photoToSend,
                                 signals = com.skyprivilege.domain.model.LocationContext(
-                                    gps = com.skyprivilege.domain.model.GpsCoordinate(
+                                    gps = liveGps ?: com.skyprivilege.domain.model.GpsCoordinate(
                                         latitude = -6.1256,
                                         longitude = 106.6558,
                                         accuracyMeters = 15f,
                                         isMock = false
                                     ),
-                                    wifi = com.skyprivilege.domain.model.WifiContext(
+                                    wifi = liveWifi ?: com.skyprivilege.domain.model.WifiContext(
                                         bssid = "aa:bb:cc:dd:ee:ff",
                                         ssid = "SkyPrivilege_Staff",
                                         rssiDbm = -60
@@ -786,6 +799,10 @@ fun MainAppScreen(
             }
 
             if (showGpsAttendanceDialog) {
+                var currentGpsCoord by remember { mutableStateOf<GpsCoordinate?>(null) }
+                LaunchedEffect(Unit) {
+                    currentGpsCoord = locationProvider?.invoke()
+                }
                 GpsAttendanceDialog(
                     cashierName = "Kasir Terminal 3 (CSH-001)",
                     deviceId = deviceId,
@@ -794,9 +811,9 @@ fun MainAppScreen(
                     currentTimeText = "08:15:30 WIB",
                     checkInTime = todayAttendance?.checkInAt?.let { if (it.length >= 16) it.substring(11, 16) else it } ?: todayAttendance?.startTime,
                     checkOutTime = todayAttendance?.checkOutAt?.let { if (it.length >= 16) it.substring(11, 16) else it } ?: todayAttendance?.endTime,
-                    latitude = -6.1256,
-                    longitude = 106.6558,
-                    accuracyMeters = 15.0f,
+                    latitude = currentGpsCoord?.latitude ?: -6.1256,
+                    longitude = currentGpsCoord?.longitude ?: 106.6558,
+                    accuracyMeters = currentGpsCoord?.accuracyMeters ?: 15.0f,
                     isSubmitting = isAttendanceSubmitting,
                     errorMessage = attendanceDialogError,
                     onDismiss = { showGpsAttendanceDialog = false },
@@ -804,13 +821,16 @@ fun MainAppScreen(
                         isAttendanceSubmitting = true
                         attendanceDialogError = null
                         coroutineScope.launch {
+                            val finalLat = if (lat != -6.1256) lat else (locationProvider?.invoke()?.latitude ?: lat)
+                            val finalLng = if (lng != 106.6558) lng else (locationProvider?.invoke()?.longitude ?: lng)
+                            val finalAcc = if (acc != 15.0f) acc else (locationProvider?.invoke()?.accuracyMeters ?: acc)
                             attendanceRepo.recordAttendance(
                                 cashierId = cashierId,
                                 outletId = outletId,
                                 type = type,
-                                latitude = lat,
-                                longitude = lng,
-                                accuracy = acc
+                                latitude = finalLat,
+                                longitude = finalLng,
+                                accuracy = finalAcc
                             ).onSuccess { res ->
                                 isAttendanceSubmitting = false
                                 showGpsAttendanceDialog = false
@@ -877,9 +897,14 @@ fun MainAppScreen(
             if (showEmergencyDialog) {
                 EmergencyVoucherDialog(
                     isSubmitting = isEmergencySubmitting,
-                    onDismiss = { showEmergencyDialog = false },
+                    errorMessage = emergencyVoucherError,
+                    onDismiss = {
+                        showEmergencyDialog = false
+                        emergencyVoucherError = null
+                    },
                     onSubmit = { serial, pnr, pin, rsn ->
                         isEmergencySubmitting = true
+                        emergencyVoucherError = null
                         coroutineScope.launch {
                             redemptionRepo.issueEmergencyVoucher(
                                 serialNumber = serial,
@@ -888,13 +913,16 @@ fun MainAppScreen(
                                 reason = rsn,
                                 cashierId = cashierId,
                                 outletId = outletId
-                            ).onSuccess {
-                                attendanceSuccessToast = "Voucher Darurat #$serial berhasil diterbitkan untuk PNR $pnr"
+                            ).onSuccess { msg ->
+                                isEmergencySubmitting = false
+                                emergencyVoucherError = null
+                                showEmergencyDialog = false
+                                attendanceSuccessToast = msg
                             }.onFailure { err ->
+                                isEmergencySubmitting = false
+                                emergencyVoucherError = err.message ?: "Koneksi ke backend gagal. Coba lagi."
                                 attendanceSuccessToast = "Gagal terbitkan voucher: ${err.message}"
                             }
-                            isEmergencySubmitting = false
-                            showEmergencyDialog = false
                         }
                     }
                 )
@@ -992,7 +1020,7 @@ fun MainAppScreen(
                                     .background(Color(0xFFFEF3C7)),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text("⚠️", fontSize = 26.sp)
+                                FlatShieldIcon(tint = Color(0xFFD97706), size = 26.dp)
                             }
 
                             Spacer(modifier = Modifier.height(14.dp))
@@ -1074,7 +1102,7 @@ fun MainAppScreen(
                                     .background(Color(0xFFFEF2F2)),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text("🔒", fontSize = 26.sp)
+                                FlatShieldIcon(tint = Color(0xFFDC2626), size = 26.dp)
                             }
 
                             Spacer(modifier = Modifier.height(14.dp))
@@ -1277,7 +1305,7 @@ fun HomeTabContent(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text("🔒", fontSize = 14.sp)
+                                FlatShieldIcon(tint = Color(0xFF64748B), size = 14.dp)
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
                                     text = "Shift Hari Ini Telah Selesai",
@@ -1816,7 +1844,7 @@ fun RedemptionHistoryCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "PNR: ${item.pnrMasked.ifBlank { "f7f12381..." }}",
+                    text = "PNR: ${item.pnrMasked?.ifBlank { "f7f12381..." } ?: "f7f12381..."}",
                     fontFamily = FontFamily.Monospace,
                     fontSize = 11.sp,
                     color = Color(0xFF475569)
@@ -1915,7 +1943,7 @@ fun ScanTabContent(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = if (checklistConfirmed) "✅ Checklist Fisik Terkonfirmasi" else "⚠️ Wajib Checklist Keaslian Tiket",
+                            text = if (checklistConfirmed) "Checklist Fisik Terkonfirmasi" else "Wajib Checklist Keaslian Tiket",
                             fontWeight = FontWeight.Bold,
                             fontSize = 13.sp,
                             color = if (checklistConfirmed) GrabGreenDark else Color(0xFFB45309)
@@ -2034,14 +2062,14 @@ fun ScanTabContent(
                         ) {
                             Column(modifier = Modifier.padding(12.dp)) {
                                 Text(
-                                    text = "✅ Boarding Pass Sah & Terverifikasi",
+                                    text = "Boarding Pass Sah & Terverifikasi",
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 13.sp,
                                     color = GrabGreenDark
                                 )
                                 Spacer(modifier = Modifier.height(6.dp))
                                 Text("Penumpang: ${PiiMasker.maskName(t.passengerName)}", fontSize = 12.sp, color = Color(0xFF14532D))
-                                Text("PNR: ${t.pnr} | Penerbangan: ${t.flightNumber} (${t.fromAirport} -> ${t.toAirport})", fontSize = 12.sp, color = Color(0xFF14532D))
+                                Text("PNR: ${PiiMasker.maskPnr(t.pnr)} | Penerbangan: ${t.flightNumber} (${t.fromAirport} -> ${t.toAirport})", fontSize = 12.sp, color = Color(0xFF14532D))
                                 Text("Tanggal: ${t.flightDate} | Kursi: ${t.seatNumber} | Kelas: ${t.compartmentCode}", fontSize = 12.sp, color = Color(0xFF14532D))
                                 Text(
                                     text = "Hash: ${t.canonicalHash?.take(16)}...",
@@ -2079,7 +2107,7 @@ fun ScanTabContent(
                         ) {
                             Column(modifier = Modifier.padding(14.dp)) {
                                 Text(
-                                    text = "🎉 KLAIM DISKON BERHASIL",
+                                    text = "KLAIM DISKON BERHASIL",
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 14.sp,
                                     color = Color(0xFF15803D)
@@ -2099,7 +2127,7 @@ fun ScanTabContent(
                                         .padding(10.dp)
                                 ) {
                                     Text(
-                                        text = "⚠️ WAJIB STEMPEL BASAH: Berikan stempel fisik 'CLAIMED - SKYPRIVILEGE' pada boarding pass penumpang sebelum mengembalikan.",
+                                        text = "WAJIB STEMPEL BASAH: Berikan stempel fisik 'CLAIMED - SKYPRIVILEGE' pada boarding pass penumpang sebelum mengembalikan.",
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = Color(0xFFB45309)

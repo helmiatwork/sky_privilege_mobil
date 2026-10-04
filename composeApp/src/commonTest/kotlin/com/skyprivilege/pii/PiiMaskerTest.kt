@@ -19,12 +19,22 @@ class PiiMaskerTest {
 
     @Test
     fun maskName_multiWord_masksEachPart() {
-        assertEquals("D******* M*", PiiMasker.maskName("DOE/JOHN MR"))
+        assertEquals("J*** M* D**", PiiMasker.maskName("DOE/JOHN MR"))
     }
 
     @Test
     fun maskName_fullIataName_masksCorrectly() {
-        assertEquals("S*********** M*", PiiMasker.maskName("SANTOSO/BUDI MR"))
+        assertEquals("P**** M* P****", PiiMasker.maskName("PAX_A/PAX_B MR"))
+    }
+
+    @Test
+    fun maskName_surnameFirst_formatsCorrectly() {
+        assertEquals("F**** S******", PiiMasker.maskName("SURNAME/FIRST"))
+    }
+
+    @Test
+    fun maskName_standardSpaceSeparated_masksWords() {
+        assertEquals("J*** D**", PiiMasker.maskName("JOHN DOE"))
     }
 
     @Test

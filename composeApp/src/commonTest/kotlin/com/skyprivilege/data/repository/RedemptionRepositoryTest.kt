@@ -108,8 +108,8 @@ class RedemptionRepositoryTest {
         )
 
         val result = repository.submitRedemption(claim)
-        assertTrue(result.isFailure)
         val exception = result.exceptionOrNull()
+        assertTrue(result.isFailure)
         assertIs<NonStackingConflictException>(exception)
         assertEquals("Order ini sudah menggunakan diskon SkyPrivilege", exception.errorMessage)
     }
@@ -355,5 +355,80 @@ class RedemptionRepositoryTest {
 
         assertTrue(result.isSuccess)
         assertEquals("token_wrap_123", result.getOrNull())
+    }
+
+    @Test
+    fun testIssueEmergencyVoucherSuccessMasksPnr() = runTest {
+        val mockEngine = MockEngine { request ->
+            assertEquals("/api/v1/emergency_vouchers", request.url.encodedPath)
+            respond(
+                content = """
+                    {
+                        "success": true,
+                        "voucher_id": 101,
+                        "message": null
+                    }
+                """.trimIndent(),
+                status = HttpStatusCode.OK,
+                headers = headersOf(HttpHeaders.ContentType, "application/json")
+            )
+        }
+
+        val client = HttpClient(mockEngine) {
+            install(ContentNegotiation) {
+                json(Json { ignoreUnknownKeys = true })
+            }
+        }
+
+        val repository = RedemptionRepositoryImpl(client)
+        val result = repository.issueEmergencyVoucher(
+            serialNumber = "EMG-001",
+            pnr = "ABCDEF",
+            supervisorPin = "123456",
+            reason = "Offline POS",
+            cashierId = 1L,
+            outletId = 2L
+        )
+
+        assertTrue(result.isSuccess)
+        val msg = result.getOrNull().orEmpty()
+        assertTrue(msg.contains("Voucher Darurat #EMG-001"))
+        assertTrue(msg.contains("AB***F"))
+        assertTrue(!msg.contains("ABCDEF"))
+    }
+
+    @Test
+    fun testIssueEmergencyVoucherFailureReturnsError() = runTest {
+        val mockEngine = MockEngine { _ ->
+            respond(
+                content = """
+                    {
+                        "success": false,
+                        "error": "PIN Supervisor salah"
+                    }
+                """.trimIndent(),
+                status = HttpStatusCode.OK,
+                headers = headersOf(HttpHeaders.ContentType, "application/json")
+            )
+        }
+
+        val client = HttpClient(mockEngine) {
+            install(ContentNegotiation) {
+                json(Json { ignoreUnknownKeys = true })
+            }
+        }
+
+        val repository = RedemptionRepositoryImpl(client)
+        val result = repository.issueEmergencyVoucher(
+            serialNumber = "EMG-002",
+            pnr = "ABCDEF",
+            supervisorPin = "999999",
+            reason = "Offline",
+            cashierId = 1L,
+            outletId = 2L
+        )
+
+        assertTrue(result.isFailure)
+        assertEquals("PIN Supervisor salah", result.exceptionOrNull()?.message)
     }
 }

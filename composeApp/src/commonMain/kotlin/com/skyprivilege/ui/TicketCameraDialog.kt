@@ -52,6 +52,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.skyprivilege.ui.components.FlatCameraScanIcon
+import com.skyprivilege.ui.components.FlatScanIcon
 
 object TicketScanDefaults {
     const val SAMPLE_DEMO_BARCODE = "M1HERMAWAN/EKO MR     EXYZ7890CGKDPSGA 00410268Y014B00045100"
@@ -231,7 +232,7 @@ fun TicketCameraDialog(
                 ) {
                     Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("🔍", fontSize = 11.sp)
+                            FlatScanIcon(tint = Color(0xFF334155), size = 12.dp)
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
                                 text = "Barcode Terdeteksi Otomatis (Read-Only):",
@@ -286,7 +287,7 @@ fun TicketCameraDialog(
                 if (errorMessage != null) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "⚠️ $errorMessage",
+                        text = errorMessage,
                         color = Color(0xFFBE123C),
                         fontSize = 11.sp
                     )

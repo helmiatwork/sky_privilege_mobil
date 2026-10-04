@@ -9,8 +9,7 @@ interface ShiftRepository {
         cashierId: Long,
         outletId: Long,
         deviceId: Long? = null,
-        openingCash: Double = 0.0,
-        openingSelfieKey: String? = null
+        openingCash: Double = 0.0
     ): Result<ShiftDto>
 
     suspend fun closeShift(

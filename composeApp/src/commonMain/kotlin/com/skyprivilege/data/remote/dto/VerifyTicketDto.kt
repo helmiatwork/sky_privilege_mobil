@@ -22,7 +22,7 @@ data class VerifyTicketRequest(
 @Serializable
 data class ParsedTicketDto(
     val valid: Boolean = false,
-    @SerialName("passenger_name") val passengerName: String? = null,
+    @SerialName("masked_display_name") val maskedDisplayName: String? = null,
     val pnr: String? = null,
     @SerialName("from_airport") val fromAirport: String? = null,
     @SerialName("to_airport") val toAirport: String? = null,

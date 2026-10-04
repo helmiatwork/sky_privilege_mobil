@@ -7,7 +7,6 @@ import com.skyprivilege.domain.model.Ticket
 import com.skyprivilege.domain.model.TicketVerificationException
 import com.skyprivilege.domain.repository.TicketRepository
 import io.ktor.client.HttpClient
-import io.ktor.client.call.body
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
@@ -37,7 +36,7 @@ class TicketRepositoryImpl(
             if (body.success && body.ticket != null) {
                 val t = body.ticket
                 Ticket(
-                    passengerName = t.passengerName.orEmpty(),
+                    passengerName = t.maskedDisplayName.orEmpty(),
                     pnr = t.pnr.orEmpty(),
                     fromAirport = t.fromAirport.orEmpty(),
                     toAirport = t.toAirport.orEmpty(),
@@ -101,7 +100,7 @@ class TicketRepositoryImpl(
             if (body.success && body.valid && body.ticket != null) {
                 val t = body.ticket
                 Ticket(
-                    passengerName = t.passengerName.orEmpty(),
+                    passengerName = t.maskedDisplayName.orEmpty(),
                     pnr = t.pnr.orEmpty(),
                     fromAirport = t.fromAirport.orEmpty(),
                     toAirport = t.toAirport.orEmpty(),

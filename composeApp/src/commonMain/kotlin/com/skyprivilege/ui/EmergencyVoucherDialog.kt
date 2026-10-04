@@ -60,7 +60,7 @@ fun EmergencyVoucherDialog(
                 ) {
                     Column {
                         Text(
-                            text = "🎟️ Emergency Voucher Fisik",
+                            text = "Emergency Voucher Fisik",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF0F172A)
@@ -95,7 +95,7 @@ fun EmergencyVoucherDialog(
                         modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp)
                     ) {
                         Text(
-                            text = "⚠️ $errorMessage",
+                            text = errorMessage,
                             color = Color(0xFFBE123C),
                             fontSize = 11.sp,
                             modifier = Modifier.padding(8.dp)

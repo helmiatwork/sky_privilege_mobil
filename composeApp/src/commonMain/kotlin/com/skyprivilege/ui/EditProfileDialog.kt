@@ -75,7 +75,7 @@ fun EditProfileDialog(
                         modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
                     ) {
                         Text(
-                            text = "⚠️ $errorMessage",
+                            text = errorMessage,
                             color = Color(0xFFBE123C),
                             fontSize = 12.sp,
                             modifier = Modifier.padding(10.dp)
