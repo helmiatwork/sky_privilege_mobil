@@ -1,0 +1,7 @@
+naming:
+  FunctionNaming:
+    # Allow PascalCase for @Composable functions
+    functionPattern: '[a-zA-Z][a-zA-Z0-9]*'
+    excludes: ['**/commonMain/**', '**/androidMain/**', '**/iosMain/**']
+  TopLevelPropertyNaming:
+    active: false
