@@ -17,7 +17,7 @@ Backend paths relative to `backend/`. Mobile paths relative to `mobile/composeAp
 | Wave 3 | `STAR_P0_WAVE3_PDP_RIGHTS_AND_BREACH_GOVERNANCE.md` | inline §3 (D1–D6) | W3-01…W3-14 | 14 | 0 | 0 | 100% |
 | Wave 4 | `STAR_P0_WAVE4_FINAL_BACKEND_AND_COMPLIANCE.md` | inline §3.4, §4.2 | W4-01…W4-10 | 10 | 0 | 0 | 100% |
 | Mobile | `mobile/docs/plans/STAR_MOBILE_AUDIT_REMEDIATION.md` | inline §R (DoD-1…DoD-15) | MB-01…MB-12 | 12 | 0 | 0 | 100% |
-| Mechanical gates | — | this file §7 | G-B1…G-B5, G-M1…G-M4 | 8 | 1 | 0 | 89% |
+| Mechanical gates | — | this file §7 | G-B1…G-B5, G-M1…G-M4 | 9 | 0 | 0 | 100% |
 
 "Not Verified" rows resolved: Brakeman verified with 0 warnings, Mobile tests reconciled to 104/104 passing across 20 test classes, and Playwright Chromium E2E added at 10/10 passing. Code anchors verified on disk at `backend@50ab35d` / `mobile@a81fec4`.
 
@@ -113,7 +113,7 @@ Backend paths relative to `backend/`. Mobile paths relative to `mobile/composeAp
 |---|---|---|---|---|---|
 | G-B1 | Backend RSpec | `rtk bundle exec rspec` | 1563/1563 passing | Yes (`task-1894` + core passing) | PASSED |
 | G-B2 | RuboCop | `rtk bundle exec rubocop` | 0 offenses | Yes (`0 offenses detected`) | PASSED |
-| G-B3 | SimpleCov ≥ 90% | `spec/spec_helper.rb:4` (`SimpleCov.start 'rails'`) | ≥ 90% claimed | `minimum_coverage` directive absent; threshold not enforced mechanically | PARTIAL |
+| G-B3 | SimpleCov ≥ 90% | `spec/spec_helper.rb:4` (`SimpleCov.start 'rails'`) | ≥ 90% enforced | `minimum_coverage 90` in `SimpleCov.start` block under `CI`/`COVERAGE` env (`spec/spec_helper.rb:12`) | PASSED |
 | G-B4 | Brakeman | `bundle exec brakeman -q --no-pager` | 0 warnings | Yes (SQL injection resolved via Arel + sanitize_sql_array) | PASSED |
 | G-B5 | Playwright Chromium E2E | `rtk bunx playwright test --project=chromium` | 10/10 passing | Yes (11.6s, Desktop Chrome/Chromium, seed god_mode + DPA) | PASSED |
 | G-M1 | Mobile unit tests | `rtk ./gradlew :composeApp:testDebugUnitTest` | 104/104 passing | Yes (reconciled: 104 tests across 20 XML test classes) | PASSED |
