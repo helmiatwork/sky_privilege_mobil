@@ -7,6 +7,12 @@ Delta only. Project rules: `../AGENTS.md`. Global rules: `~/.gemini/AGENTS.md`.
 - Build check: `./gradlew :composeApp:assemble`.
 - Lint: `./gradlew :composeApp:lint`.
 - GitNexus pre-commit: `rtk gitnexus detect-changes -C mobile`.
+- Static analysis: `rtk ./gradlew detekt` (0 issues; config in `config/detekt/detekt.yml`).
+
+## Mechanical Same-Commit Sync & Doc Enforcement (MANDATORY)
+- **Rule**: Any change under `composeApp/src/` MUST ship in the same commit as its `DOD_<slug>.md` (or `docs/dod/DOD_MASTER.md`), `QA_<slug>.md`, `CHANGELOG.md`, `composeApp/src/commonTest/`, or other `docs/` evidence.
+- **Rejection**: `code-reviewer` and `oracle` reject with `CHANGES_REQUESTED` when code lands without evidence.
+- **Hook**: `scripts/pre-commit-docs-guard.sh` linked to `.git/hooks/pre-commit`. Install: `ln -sf ../../scripts/pre-commit-docs-guard.sh .git/hooks/pre-commit`. Rejection prints `[HOOK REJECTED] Code modified without updating docs/ or DoD evidence!`. Bypass: `SKIP_DOCS=1 git commit ...` with justification in body. Never `--no-verify`.
 
 ## Invariant Spec Notes (Pillar A)
 - Business logic and tests go in `commonMain` / `commonTest`; platform code only in `androidMain` / `iosMain` via `expect` / `actual`.
