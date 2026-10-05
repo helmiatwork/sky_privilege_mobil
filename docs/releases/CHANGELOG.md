@@ -2,7 +2,17 @@
 
 All notable changes to the tablet app. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); newest first. One entry per `Implemented` row in [`plans/PLAN_MASTER.md`](../plans/PLAN_MASTER.md) §2.1, landed commit as reference (backend RFC-0001 §5.9).
 
-No git tag exists yet; version labels are logical until the first tag.
+## Release tags
+
+Annotated SemVer tags on `main`, backfilled from the root commit (Release Taxonomy decision, 2026-10-05). The tablet app versions independently from the backend; the compatibility matrix below is the only link. MAJOR = wire contract break with the backend. MINOR = backwards-compatible feature. PATCH = fix-only. `composeApp/build.gradle.kts` `versionName` must match the tag at release time (currently `1.0.0`, bump to `2.0.0` in the next code commit).
+
+| Tag | Commit | Date | Scope | Requires backend |
+|---|---|---|---|---|
+| `v2.0.0` | `765a7ca` | 2026-10-04 | Audit Remediation Round 2. Breaking wire contract: static `X-Device-Token` replaced by `X-Timestamp`/`X-Nonce`/`X-Device-Signature`; DTOs carry only masked PNR fields; Detekt; docs guard | `>= v3.0.0` (verified on `v4.0.0`) |
+| `v1.1.0` | `2addea9` | 2026-09-25 | Baggage wrapping size selection, dynamic Moka pricing, multiplatform clock, Ktor LLM timeout, E2E scenario IDs | `>= v1.1.0` (D-2 prices on `>= v2.2.0`) |
+| `v1.0.0` | `02f16f5` | 2026-09-20 | POS MVP GA: 2-stage checklist gate, camera viewfinder, zero-disk ticket photo, pull-to-refresh, auto shift status, release NSC, Opus blockers closed | `>= v1.0.0` |
+| `v0.2.0` | `f6f2726` | 2026-09-19 | `X-Device-Token` auth, GPS attendance map, BCA Mobile style 5-slot nav, flat icons | `v0.x` |
+| `v0.1.0` | `9e9f692` | 2026-09-19 | Scaffold, domain models, authenticity checklist, shift management, zero-gallery policy, first runnable `MainActivity` scanner | `v0.x` |
 
 ## [Unreleased]
 
